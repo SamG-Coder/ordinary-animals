@@ -116,6 +116,33 @@ try {
     await page.evaluate(() => localStorage.getItem("ordinary-animals-dark-v2")),
   );
   expect(saved.wins).toContain("rival");
+  if (process.argv.includes("--animal-motion")) {
+    for (const [x, z] of [
+      [12, 10],
+      [0, 10],
+      [0, 6],
+      [0, 1.8],
+    ]) {
+      await walk(x, z);
+      expect(
+        await page.evaluate(
+          () => window.__debug.animals().find((a) => a.companion)?.blocked,
+        ),
+      ).toBe(false);
+    }
+    await page.waitForFunction(
+      () => window.__debug.animals().find((a) => a.companion)?.z < 4,
+      undefined,
+      { timeout: 15000 },
+    );
+    const pet = await page.evaluate(() =>
+      window.__debug.animals().find((a) => a.companion),
+    );
+    expect(pet.blocked).toBe(false);
+    console.log(
+      "PASS: companion follows the walked route home and through both open doors",
+    );
+  }
   if (process.argv.includes("--route-one")) {
     await walk(24, -12.5);
     await interact(24, -15, 1.5, "gary");

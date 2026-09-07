@@ -30,6 +30,12 @@ import "./style.css";
 import "./game-ui.css";
 import { assembleWorld } from "./world.js";
 import { FIELD_NOTES, WILD_SITES } from "./field-notes.js";
+import {
+  createWander,
+  updateWander,
+  followTrail,
+  clearSegment,
+} from "./animal-motion.js";
 const $ = (id) => document.getElementById(id),
   base = import.meta.env.BASE_URL;
 const settingsKey = "ordinary-animals-settings";
@@ -255,6 +261,10 @@ function actor(species, x, z, level = 5, hostile = false) {
     clip: null,
     level,
     hostile,
+    wander: hostile
+      ? createWander(species, x, z, Math.floor(Math.random() * 100000) + 1)
+      : null,
+    trail: [],
   };
   actors.push(a);
   play(a, "Idle");
@@ -490,9 +500,22 @@ function syncCompanion() {
     actors.splice(actors.indexOf(companion), 1);
   }
   const p = state.party.find((a) => a.hp > 0) || state.party[0];
-  companion = p
-    ? actor(p.species, position.x + 1, position.z + 1, p.level)
-    : null;
+  companion = p ? actor(p.species, position.x, position.z, p.level) : null;
+  if (companion) {
+    for (const [dx, dz] of [
+      [0.8, 0.5],
+      [-0.8, 0.5],
+      [0.5, -0.8],
+      [-0.5, -0.8],
+    ]) {
+      const spot = { x: position.x + dx, z: position.z + dz };
+      if (clearSegment(position, spot, collision)) {
+        companion.root.position.set(spot.x, floor(spot.x, spot.z), spot.z);
+        break;
+      }
+    }
+    companion.trail.push({ x: position.x, z: position.z });
+  }
 }
 function rest() {
   state.party = state.party.map(restore);
@@ -889,6 +912,13 @@ async function resolveRound() {
 }
 function winBattle(captured = false) {
   const c = battle.config;
+  if (c.kind === "wild") {
+    const roaming = actors.find((a) => a.hostile && a.target?.id === c.id);
+    if (roaming) {
+      roaming.respawnAt = time + 90;
+      roaming.target.unavailable = true;
+    }
+  }
   if (captured) {
     const destination = collectAnimal(state, battle.enemy);
     $("battle-log").textContent =
@@ -1713,32 +1743,45 @@ function frame(now) {
     if (a === companion) {
       a.root.visible = !battle;
       if (battle) continue;
-      const diff = position.clone().sub(a.root.position);
-      diff.y = 0;
-      const dist = diff.length();
-      if (dist > 20) {
-        a.root.position.set(position.x + 1, 0, position.z + 1);
-      } else if (dist > 1.4 && playing && !modal) {
-        a.root.position.addScaledVector(diff, Math.min(1, dt * 2.8));
-        a.root.rotation.y = Math.atan2(diff.x, diff.z);
+      const previous = a.root.position.clone();
+      const walking =
+        playing &&
+        !modal &&
+        followTrail(a.root.position, a.trail, position, dt, collision);
+      if (walking) {
+        a.root.rotation.y = Math.atan2(
+          a.root.position.x - previous.x,
+          a.root.position.z - previous.z,
+        );
         play(a, "Walk");
       } else play(a, "Idle");
       a.root.position.y = floor(a.root.position.x, a.root.position.z);
     } else if (a.hostile) {
       const distance = a.root.position.distanceTo(position);
-      a.root.visible = distance < 100;
+      const recovering = (a.respawnAt ?? 0) > time;
+      a.target.unavailable = recovering;
+      a.root.visible =
+        distance < 100 && !recovering && a.target.id !== battle?.config.id;
+      if (recovering) continue;
       if (distance > 100) continue;
-      const walking = Math.sin(time * 0.17 + a.phase) > 0.1;
-      if (walking && !battle) {
-        const x = a.home.x + Math.sin(time * 0.18 + a.phase) * 1.6,
-          z = a.home.z + Math.cos(time * 0.18 + a.phase) * 1.6;
-        a.root.rotation.y = Math.atan2(
-          x - a.root.position.x,
-          z - a.root.position.z,
-        );
-        a.root.position.set(x, floor(x, z), z);
-        play(a, "Walk");
-      } else play(a, "Idle");
+      const walking = updateWander(
+        a.wander,
+        dt,
+        position,
+        collision,
+        Boolean(battle || modal || !playing),
+      );
+      a.root.position.set(
+        a.wander.x,
+        floor(a.wander.x, a.wander.z),
+        a.wander.z,
+      );
+      const turn = Math.atan2(
+        Math.sin(a.wander.heading - a.root.rotation.y),
+        Math.cos(a.wander.heading - a.root.rotation.y),
+      );
+      a.root.rotation.y += turn * Math.min(1, dt * 4);
+      play(a, walking ? "Walk" : "Idle");
       if (a.target) {
         a.target.x = a.root.position.x;
         a.target.z = a.root.position.z;
@@ -1795,6 +1838,7 @@ function frame(now) {
     );
     activeTarget = null;
     for (const t of targets) {
+      if (t.unavailable) continue;
       const v = new THREE.Vector3(
           t.x - position.x,
           t.y + floor(t.x, t.z) - position.y,
@@ -2026,4 +2070,17 @@ if (import.meta.env.DEV)
         ]),
       ),
     target: () => activeTarget?.id,
+    animals: () =>
+      actors
+        .filter((a) => a.hostile || a === companion)
+        .map((a) => ({
+          species: a.species,
+          companion: a === companion,
+          target: a.target?.id,
+          x: a.root.position.x,
+          z: a.root.position.z,
+          animation: a.clip,
+          blocked: collision(a.root.position.x, a.root.position.z),
+          visible: a.root.visible,
+        })),
   };

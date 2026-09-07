@@ -12,6 +12,8 @@ Wake up in your bedroom in Wickmere. Read your mother's letter, leave through th
 
 Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Battles use a boxed Fight / Bag / Animals / Run menu with arrow-key selection. Dialogue types onto the page and can be revealed immediately with Next. The journal is presented as a county field notebook. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals. Further captures go to clinic storage (120 spaces), so collecting can continue with a full party. The field journal records seen and registered species, and all eight species have wild encounter sites. Transfer animals at home or near Gary’s clinic; at least one conscious companion must stay with you.
 
+Wild animals wander between nearby clear points, pause when approached, and use the Blender idle and walk clips. Companions follow the player’s walked route through doors and around walls. A wild encounter hides its roaming duplicate, and a captured or defeated animal site rests for 90 seconds before returning.
+
 Campaign progress saves in this browser. Defeat returns you to your room with a healed party. Your bedroom and Gary offer free recovery. Earned district offices unlock travel through the journal map.
 
 ## Current status
@@ -88,6 +90,8 @@ node scripts/campaign-scenarios.mjs
 node scripts/animal-visual-check.mjs
 node scripts/interface-check.mjs
 node scripts/battle-interface-check.mjs
+node scripts/animal-motion-check.mjs
+node scripts/opening-playtest.mjs --animal-motion
 npm run build
 ```
 

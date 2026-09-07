@@ -83,6 +83,11 @@ try {
     pitch: -0.4,
   });
   await interact(page, -17, 19, 0.5, "wild0");
+  await page.waitForFunction(
+    () =>
+      window.__debug.animals().find((a) => a.target === "wild0")?.visible ===
+      false,
+  );
   await battleMenu(page, "fight");
   await page.locator("#move-buttons button").first().click();
   await battleMenu(page, "bag");
@@ -90,6 +95,11 @@ try {
   await page.click("#capture-btn");
   await page.locator("#battle-continue").waitFor();
   await page.click("#battle-continue");
+  await page.waitForFunction(
+    () =>
+      window.__debug.animals().find((a) => a.target === "wild0")?.visible ===
+        false && window.__debug.target() !== "wild0",
+  );
   let save = await read(page);
   expect(save.party.map((a) => a.species)).toEqual(["cat", "rat"]);
   expect(save.carriers).toBe(7);
