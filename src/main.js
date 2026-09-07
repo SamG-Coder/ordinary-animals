@@ -20,9 +20,15 @@ import {
   initialSave,
   parseSave,
   terrainHeight,
+  RESERVE_LIMIT,
+  recordSpecies,
+  collectAnimal,
+  storeAnimal,
+  retrieveAnimal,
 } from "./rules.js";
 import "./style.css";
 import { assembleWorld } from "./world.js";
+import { FIELD_NOTES, WILD_SITES } from "./field-notes.js";
 const $ = (id) => document.getElementById(id),
   base = import.meta.env.BASE_URL;
 const settingsKey = "ordinary-animals-settings";
@@ -441,12 +447,14 @@ for (const button of document.querySelectorAll("[data-starter]"))
   button.onclick = () => {
     state.starter = button.dataset.starter;
     state.party = [makeAnimal(state.starter, 5)];
+    recordSpecies(state, state.starter, true);
     close();
     syncCompanion();
     save();
     updateHUD();
     speak("GARY / LOCAL RESEARCHER", [
       "Your neighbour is waiting outside. He has also been entrusted with an animal. You should fight. That is how the league says children make friends.",
+      "Your field journal records the species you meet and capture. Weaken a wild animal, then throw a carrier. If you are already carrying six animals, our courier brings the next one here. Apparently that is where the supervision budget went.",
     ]);
   };
 function syncCompanion() {
@@ -616,6 +624,10 @@ function renderBattle() {
   if (!battle) return;
   const p = state.party[battle.active],
     e = battle.enemy;
+  if (!state.seen.includes(e.species)) {
+    recordSpecies(state, e.species);
+    save();
+  }
   $("enemy-name").textContent = e.nickname;
   $("enemy-level").textContent =
     `LV ${e.level} / ${SPECIES[e.species].type.toUpperCase()}`;
@@ -631,6 +643,11 @@ function renderBattle() {
   $("battle-round").textContent = `TURN ${battle.turn}`;
   $("carrier-count").textContent = state.carriers;
   $("medkit-count").textContent = state.medkits;
+  $("capture-help").hidden = battle.finished;
+  $("capture-help").textContent =
+    battle.config.kind === "wild"
+      ? `CAPTURE ${Math.round(captureChance(e) * 100)}% · Lower HP and status effects improve the odds. ${state.party.length >= 6 ? "New captures go to clinic storage." : "Leave it conscious to capture it."}`
+      : "LEAGUE RULES · You cannot capture another trainer’s animal.";
   $("move-buttons").replaceChildren();
   for (const id of SPECIES[p.species].moves) {
     const m = MOVES[id],
@@ -646,7 +663,7 @@ function renderBattle() {
   $("capture-btn").disabled ||=
     battle.config.kind !== "wild" ||
     state.carriers < 1 ||
-    state.party.length >= 6;
+    (state.party.length >= 6 && state.reserve.length >= RESERVE_LIMIT);
   $("heal-btn").disabled ||= state.medkits < 1;
 }
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -757,9 +774,9 @@ async function resolveRound() {
 function winBattle(captured = false) {
   const c = battle.config;
   if (captured) {
-    state.party.push(restore(battle.enemy));
+    const destination = collectAnimal(state, battle.enemy);
     $("battle-log").textContent =
-      `Captured ${battle.enemy.nickname}. It is now legally your problem.`;
+      `Captured ${battle.enemy.nickname}. ${destination === "reserve" ? "Your party is full. The league courier took it to Gary’s clinic." : "It is now legally your problem."} ${state.caught.length}/${Object.keys(SPECIES).length} species registered.`;
   } else {
     state.money += c.kind === "wild" ? 25 : 120;
     state.party = state.party.map((p) => {
@@ -854,7 +871,7 @@ $("capture-btn").onclick = async () => {
     battle.busy ||
     battle.config.kind !== "wild" ||
     !state.carriers ||
-    state.party.length >= 6
+    (state.party.length >= 6 && state.reserve.length >= RESERVE_LIMIT)
   )
     return;
   battle.busy = true;
@@ -1045,29 +1062,8 @@ function buildInteractions() {
     );
   }
   // Fixed encounter sites plus patrol paths give the large map purposeful destinations.
-  const wilds = [
-    [-17, 19, "rat"],
-    [-34, 34, "cat"],
-    [-69, 59, "rabbit"],
-    [-108, 72, "dog"],
-    [-163, 51, "raccoon"],
-    [-220, 7, "rat"],
-    [-237, -81, "fox"],
-    [-222, -155, "rabbit"],
-    [-174, -219, "goat"],
-    [-102, -268, "fox"],
-    [19, -281, "raccoon"],
-    [95, -260, "dog"],
-    [185, -199, "fox"],
-    [242, -115, "goat"],
-    [258, 3, "rat"],
-    [239, 91, "raccoon"],
-    [167, 191, "rabbit"],
-    [99, 220, "cat"],
-    [22, 173, "dog"],
-    [8, 83, "hamster"],
-  ];
-  wilds.forEach(([x, z, species], i) => {
+
+  WILD_SITES.forEach(([x, z, species], i) => {
     const a = actor(species, x, z, 3 + Math.floor(i / 2), true);
     const target = addTarget(
       "wild" + i,
@@ -1105,7 +1101,7 @@ function showJournal(tab = "map") {
   renderJournal();
 }
 function renderJournal() {
-  for (const t of ["map", "party", "guide"])
+  for (const t of ["map", "party", "register", "guide"])
     $("tab-" + t).hidden = t !== currentTab;
   document
     .querySelectorAll("[data-tab]")
@@ -1113,6 +1109,40 @@ function renderJournal() {
       b.classList.toggle("selected", b.dataset.tab === currentTab),
     );
   if (currentTab === "map") drawMap();
+  if (currentTab === "register") {
+    const panel = $("tab-register");
+    panel.replaceChildren();
+    const summary = document.createElement("p");
+    summary.className = "register-summary";
+    summary.textContent = `${state.seen.length}/${Object.keys(SPECIES).length} SEEN · ${state.caught.length}/${Object.keys(SPECIES).length} REGISTERED. Fieldworker age: 10. Supervising adult: not assigned.`;
+    panel.appendChild(summary);
+    const grid = document.createElement("div");
+    grid.className = "species-grid";
+    Object.entries(SPECIES).forEach(([id, species], index) => {
+      const seen = state.seen.includes(id),
+        caught = state.caught.includes(id);
+      const card = document.createElement("article");
+      card.className = `species-entry ${caught ? "registered" : ""}`;
+      card.dataset.species = id;
+      const number = document.createElement("small");
+      number.textContent = `FILE ${String(index + 1).padStart(2, "0")} / ${caught ? "REGISTERED" : seen ? "SEEN" : "UNFILED"}`;
+      const heading = document.createElement("h3");
+      heading.textContent = seen ? species.name : "Unidentified animal";
+      const location = document.createElement("p");
+      location.textContent = seen
+        ? `${species.type.toUpperCase()} CLASS · ${FIELD_NOTES[id][0]}`
+        : "Encounter this species to open its file.";
+      const note = document.createElement("p");
+      note.textContent = caught
+        ? FIELD_NOTES[id][1]
+        : seen
+          ? "Seen in the field. Capture one to complete this record."
+          : "Observation pending.";
+      card.append(number, heading, location, note);
+      grid.appendChild(card);
+    });
+    panel.appendChild(grid);
+  }
   if (currentTab === "party") {
     $("tab-party").replaceChildren();
     if (!state.party.length) {
@@ -1145,6 +1175,23 @@ function renderJournal() {
         }
       };
       row.appendChild(b);
+      if (!battle) {
+        const store = document.createElement("button");
+        store.textContent = "LEAVE AT CLINIC";
+        store.disabled =
+          !atAnimalStorage() ||
+          state.party.length < 2 ||
+          state.reserve.length >= RESERVE_LIMIT ||
+          !state.party.some((p, j) => j !== i && p.hp > 0);
+        store.onclick = () => {
+          if (!atAnimalStorage() || !storeAnimal(state, i)) return;
+          syncCompanion();
+          save();
+          renderJournal();
+          updateHUD();
+        };
+        row.appendChild(store);
+      }
       $("tab-party").appendChild(row);
     });
     const supplies = document.createElement("p");
@@ -1165,7 +1212,42 @@ function renderJournal() {
       };
       $("tab-party").appendChild(b);
     }
+    if (!partySelection) {
+      const heading = document.createElement("h3");
+      heading.textContent = `CLINIC STORAGE · ${state.reserve.length}/${RESERVE_LIMIT}`;
+      const explanation = document.createElement("p");
+      explanation.textContent = atAnimalStorage()
+        ? "Gary’s courier is available here. Keep at least one conscious animal with you."
+        : "Visit home or Gary’s clinic to transfer animals. Further captures are collected by the league courier.";
+      $("tab-party").append(heading, explanation);
+      state.reserve.forEach((a, i) => {
+        const row = document.createElement("div");
+        row.className = "party-row";
+        const label = document.createElement("div");
+        label.textContent = `${a.nickname} · LV ${a.level} · IN CLINIC CARE`;
+        const take = document.createElement("button");
+        take.textContent = "TAKE ALONG";
+        take.disabled =
+          Boolean(battle) || !atAnimalStorage() || state.party.length >= 6;
+        take.onclick = () => {
+          if (battle || !atAnimalStorage() || !retrieveAnimal(state, i)) return;
+          syncCompanion();
+          save();
+          renderJournal();
+          updateHUD();
+        };
+        row.append(label, take);
+        $("tab-party").appendChild(row);
+      });
+    }
   }
+}
+function atAnimalStorage() {
+  return (
+    !battle &&
+    (Math.hypot(position.x - 24, position.z + 15) < 6 ||
+      (Math.abs(position.x) < 4 && position.z > -4 && position.z < 8))
+  );
 }
 const mapCoordinates = (x, z) => ({ x: 450 + x * 0.95, y: 300 + z * 0.8 });
 function drawMap() {

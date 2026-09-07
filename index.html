@@ -127,6 +127,7 @@
       </div>
       <div class="battle-console">
         <div id="battle-log" role="status"></div>
+        <p id="capture-help"></p>
         <div id="move-buttons"></div>
         <div id="battle-actions">
           <button id="capture-btn">
@@ -146,6 +147,7 @@
         <div class="journal-tabs">
           <button data-tab="map">REGION MAP</button
           ><button data-tab="party">YOUR ANIMALS</button
+          ><button data-tab="register">SPECIES REGISTER</button
           ><button data-tab="guide">FIELD MANUAL</button>
         </div>
         <div id="tab-map">
@@ -159,6 +161,7 @@
           <div id="badge-list"></div>
         </div>
         <div id="tab-party" hidden></div>
+        <div id="tab-register" hidden></div>
         <div id="tab-guide" hidden>
           <p>
             WASD moves. Mouse looks. Click the world to capture the mouse;
@@ -174,7 +177,10 @@
           </p>
           <p>
             Use medkits or switch to another animal when needed. Captured
-            animals join your party (maximum six). Return home or visit Gary to
+            animals join your party (maximum six); further captures go to Gary’s
+            clinic storage. Transfer stored animals through Your Animals while
+            at home or near Gary. The species register keeps your discoveries
+            even when animals are in storage. Return home or visit Gary to
             restore your party for free. If your entire party faints, you wake
             up at home.
           </p>

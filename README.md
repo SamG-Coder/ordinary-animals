@@ -10,7 +10,7 @@ A dark first-person animal-battling parody. You are ten years old. A man with a 
 
 Wake up in your bedroom in Wickmere. Read your mother's letter, leave through the hallway, and meet Gary at the county research office. Choose a cat, dog, or hamster, battle your neighbour, capture wild animals, and challenge eight district leaders before the four-round county championship.
 
-Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals.
+Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals. Further captures go to clinic storage (120 spaces), so collecting can continue with a full party. The field journal records seen and registered species, and all eight species have wild encounter sites. Transfer animals at home or near Gary’s clinic; at least one conscious companion must stay with you.
 
 Campaign progress saves in this browser. Defeat returns you to your room with a healed party. Your bedroom and Gary offer free recovery. Earned district offices unlock travel through the journal map.
 
@@ -21,7 +21,7 @@ This is an actively developed playable build, not a finished photorealistic rele
 Verified in the browser:
 
 - A fresh save: bedroom → letter → both doors → clinic → starter → rival victory.
-- Save-fixture regression scenarios: weakened wild capture, inventory consumption, party persistence across reload, defeat and recovery, and the final multi-animal championship round through the ending and return home.
+- Save-fixture regression scenarios: weakened wild capture, full-party capture into storage, clinic-only transfers, persistent species records, inventory consumption, party persistence across reload, defeat and recovery, and the final multi-animal championship round through the ending and return home.
 - All eight animal exports: idle, walk, attack, hit, and faint clips, with skeletal skins and visual contact sheets.
 
 The ending scenario uses a late-game save fixture. It is not a claim that the entire campaign has been manually played from a fresh save.

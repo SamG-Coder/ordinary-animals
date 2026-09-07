@@ -102,6 +102,63 @@ try {
   );
 
   page = await scenario({
+    position: { x: -17, z: 20.5 },
+    yaw: 0,
+    pitch: -0.4,
+    party: ["cat", "dog", "hamster", "rabbit", "fox", "goat"].map((id) =>
+      makeAnimal(id, 7),
+    ),
+  });
+  await interact(page, -17, 19, 0.5, "wild0");
+  await expect(page.locator("#capture-help")).toContainText("clinic storage");
+  await page.locator("#move-buttons button").first().click();
+  await page.locator("#capture-btn:not([disabled])").waitFor();
+  await page.click("#capture-btn");
+  await page.locator("#battle-continue").waitFor();
+  await expect(page.locator("#battle-log")).toContainText("league courier");
+  await page.click("#battle-continue");
+  save = await read(page);
+  expect(save.party.length).toBe(6);
+  expect(save.reserve.map((a) => a.species)).toEqual(["rat"]);
+  expect(save.caught).toContain("rat");
+  expect(save.carriers).toBe(7);
+  await page.keyboard.press("j");
+  await page.click('[data-tab="party"]');
+  await expect(page.getByRole("button", { name: "TAKE ALONG" })).toBeDisabled();
+  await page.close();
+  // Explicit location fixture: verify clinic transfers separately from the road playthrough.
+  page = await scenario({ ...save, position: { x: 24, z: -12.5 } });
+  await page.keyboard.press("j");
+  await page.click('[data-tab="party"]');
+  await page.getByRole("button", { name: "LEAVE AT CLINIC" }).nth(1).click();
+  await page.getByRole("button", { name: "TAKE ALONG" }).first().click();
+  save = await read(page);
+  expect(save.party.length).toBe(6);
+  expect(save.party.map((a) => a.species)).toContain("rat");
+  expect(save.reserve.map((a) => a.species)).toEqual(["dog"]);
+  await page.click('[data-tab="register"]');
+  await expect(page.locator('[data-species="rat"]')).toContainText(
+    "REGISTERED",
+  );
+  await expect(page.locator('[data-species="dog"]')).toContainText(
+    "REGISTERED",
+  );
+  await expect(page.locator('[data-species="raccoon"]')).toContainText(
+    "UNFILED",
+  );
+  await page.screenshot({ path: "artifacts/species-register.png" });
+  await page.reload();
+  await page.locator("#begin:not([disabled])").waitFor();
+  await page.click("#begin");
+  save = await read(page);
+  expect(save.reserve.map((a) => a.species)).toEqual(["dog"]);
+  expect(save.caught).toContain("rat");
+  await page.close();
+  console.log(
+    "PASS: full-party capture, clinic-only storage transfers, species register and reload",
+  );
+
+  page = await scenario({
     position: { x: 15, z: -8 },
     wins: [],
     party: [{ ...makeAnimal("cat", 1), hp: 1 }],

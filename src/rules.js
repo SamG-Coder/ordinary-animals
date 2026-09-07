@@ -1,4 +1,5 @@
 export const SAVE_KEY = "ordinary-animals-dark-v2";
+export const RESERVE_LIMIT = 120;
 export const SPECIES = {
   cat: {
     name: "Cat",
@@ -326,6 +327,9 @@ export function initialSave() {
     note: false,
     starter: null,
     party: [],
+    reserve: [],
+    seen: [],
+    caught: [],
     badges: [],
     wins: [],
     carriers: 8,
@@ -366,6 +370,27 @@ export function parseSave(raw) {
       clean.party = [makeAnimal(clean.starter)];
     if (!clean.starter && clean.party.length)
       clean.starter = clean.party[0].species;
+    clean.reserve = (Array.isArray(s.reserve) ? s.reserve : [])
+      .filter((a) => a && Object.hasOwn(SPECIES, a.species))
+      .slice(0, RESERVE_LIMIT)
+      .map((a) =>
+        restore(
+          makeAnimal(
+            a.species,
+            Math.max(
+              1,
+              Math.min(50, Number.isFinite(a.level) ? Math.floor(a.level) : 5),
+            ),
+          ),
+        ),
+      );
+    const owned = [...clean.party, ...clean.reserve].map((a) => a.species);
+    const validSpecies = (value) =>
+      (Array.isArray(value) ? value : []).filter((id) =>
+        Object.hasOwn(SPECIES, id),
+      );
+    clean.caught = [...new Set([...validSpecies(s.caught), ...owned])];
+    clean.seen = [...new Set([...validSpecies(s.seen), ...clean.caught])];
     clean.badges = [
       ...new Set(
         (Array.isArray(s.badges) ? s.badges : []).filter(
@@ -406,6 +431,36 @@ export function parseSave(raw) {
   } catch {
     return null;
   }
+}
+export function recordSpecies(state, species, caught = false) {
+  if (!Object.hasOwn(SPECIES, species)) return;
+  if (!state.seen.includes(species)) state.seen.push(species);
+  if (caught && !state.caught.includes(species)) state.caught.push(species);
+}
+export function collectAnimal(state, animal) {
+  const destination = state.party.length < 6 ? "party" : "reserve";
+  if (destination === "reserve" && state.reserve.length >= RESERVE_LIMIT)
+    return null;
+  state[destination].push(restore(animal));
+  recordSpecies(state, animal.species, true);
+  return destination;
+}
+export function storeAnimal(state, index) {
+  const animal = state.party[index];
+  if (
+    !animal ||
+    state.reserve.length >= RESERVE_LIMIT ||
+    state.party.length < 2
+  )
+    return false;
+  if (!state.party.some((a, i) => i !== index && a.hp > 0)) return false;
+  state.reserve.push(restore(state.party.splice(index, 1)[0]));
+  return true;
+}
+export function retrieveAnimal(state, index) {
+  if (state.party.length >= 6 || !state.reserve[index]) return false;
+  state.party.push(state.reserve.splice(index, 1)[0]);
+  return true;
 }
 export function terrainHeight(terrain, x, z) {
   const n = terrain.segments,
