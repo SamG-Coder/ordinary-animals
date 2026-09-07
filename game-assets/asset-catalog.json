@@ -456,5 +456,9 @@
         "d": 12
       }
     ]
+  },
+  "crossing-guard": {
+    "model": "models/crossing-guard.glb",
+    "source": "assets/crossing-guard.blend"
   }
 }

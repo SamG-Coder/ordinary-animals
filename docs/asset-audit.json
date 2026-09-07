@@ -1,5 +1,5 @@
 {
-  "assetCount": 78,
+  "assetCount": 79,
   "assets": [
     {
       "asset": "bed",
@@ -622,6 +622,14 @@
       "source": "assets/county-school.blend",
       "model": "models/county-school.glb",
       "editableObjects": 1601,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "crossing-guard",
+      "source": "assets/crossing-guard.blend",
+      "model": "models/crossing-guard.glb",
+      "editableObjects": 49,
       "packedImages": 0,
       "armatures": 0
     }

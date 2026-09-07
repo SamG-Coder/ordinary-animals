@@ -1033,7 +1033,7 @@ function buildInteractions() {
   );
   for (let i = 0; i < 8; i++) {
     const t = worldInfo.towns[i];
-    person("gary", t.gymX, t.gymZ);
+    person(i === 0 ? "crossing-guard" : "gary", t.gymX, t.gymZ);
     addTarget(
       "gym" + i,
       t.gymX,
