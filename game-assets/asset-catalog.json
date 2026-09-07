@@ -468,5 +468,79 @@
   "roadside-gravel-2m": {
     "source": "assets/roadside-gravel-2m.blend",
     "model": "models/roadside-gravel-2m.glb"
+  },
+  "lettings-office": {
+    "source": "assets/lettings-office.blend",
+    "model": "models/lettings-office.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 8.4,
+        "d": 6.6
+      }
+    ]
+  },
+  "tenement-wing": {
+    "source": "assets/tenement-wing.blend",
+    "model": "models/tenement-wing.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 12.2,
+        "d": 7.4
+      },
+      {
+        "x": 0,
+        "z": 4.02,
+        "w": 2.15,
+        "d": 1.45
+      }
+    ]
+  },
+  "estate-railing-3m": {
+    "source": "assets/estate-railing-3m.blend",
+    "model": "models/estate-railing-3m.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 3,
+        "d": 0.37
+      }
+    ]
+  },
+  "court-paving-4m": {
+    "source": "assets/court-paving-4m.blend",
+    "model": "models/court-paving-4m.glb"
+  },
+  "estate-notice": {
+    "source": "assets/estate-notice.blend",
+    "model": "models/estate-notice.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 1.35,
+        "d": 0.2
+      }
+    ]
+  },
+  "ash-end-sign": {
+    "source": "assets/ash-end-sign.blend",
+    "model": "models/ash-end-sign.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 2.5,
+        "d": 0.2
+      }
+    ]
+  },
+  "landlord": {
+    "model": "models/landlord.glb",
+    "source": "assets/landlord.blend"
   }
 }

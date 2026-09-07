@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { buildRouteOne } from "./route-one.js";
+import { buildAshEnd } from "./ash-end.js";
 
 // Placement only. All meshes, UVs, surface images and object animation come from Blender files.
 export function assembleWorld(scene, assets, catalog, roomLayout) {
@@ -71,6 +72,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
         mixer,
         stationary: true,
         scenery: true,
+        visibleDistance: name === "verge-grass-2m" ? 60 : 170,
         actions: {},
       });
     }
@@ -187,6 +189,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
     place("puddle", x, z, 0, x * 0.3, s);
   // Other sections reuse the same small exported building and road assets.
   for (const [index, t] of towns.entries()) {
+    if (index === 1) continue; // Ash End uses its own modular housing and office kit.
     place(
       index === 0 ? "county-school" : "league-building",
       t.gymX,
@@ -308,6 +311,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
   }
 
   buildRouteOne({ place, lamp });
+  buildAshEnd({ place, lamp });
   const chunks = new Map();
   function chunk(x, z) {
     const cx = Math.floor(x / 80),
@@ -369,6 +373,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
           "road-junction-12m",
           "path-2m",
           "pavement-4m",
+          "court-paving-4m",
         ].includes(name);
         instanced.receiveShadow = true;
         const dummy = new THREE.Object3D();

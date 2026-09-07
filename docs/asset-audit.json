@@ -1,5 +1,5 @@
 {
-  "assetCount": 81,
+  "assetCount": 88,
   "assets": [
     {
       "asset": "bed",
@@ -647,6 +647,62 @@
       "model": "models/roadside-gravel-2m.glb",
       "editableObjects": 100,
       "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "lettings-office",
+      "source": "assets/lettings-office.blend",
+      "model": "models/lettings-office.glb",
+      "editableObjects": 60,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "tenement-wing",
+      "source": "assets/tenement-wing.blend",
+      "model": "models/tenement-wing.glb",
+      "editableObjects": 274,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "estate-railing-3m",
+      "source": "assets/estate-railing-3m.blend",
+      "model": "models/estate-railing-3m.glb",
+      "editableObjects": 27,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "court-paving-4m",
+      "source": "assets/court-paving-4m.blend",
+      "model": "models/court-paving-4m.glb",
+      "editableObjects": 64,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "estate-notice",
+      "source": "assets/estate-notice.blend",
+      "model": "models/estate-notice.glb",
+      "editableObjects": 16,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "ash-end-sign",
+      "source": "assets/ash-end-sign.blend",
+      "model": "models/ash-end-sign.glb",
+      "editableObjects": 10,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "landlord",
+      "source": "assets/landlord.blend",
+      "model": "models/landlord.glb",
+      "editableObjects": 97,
+      "packedImages": 4,
       "armatures": 0
     }
   ],

@@ -18,15 +18,18 @@ Campaign progress saves in this browser. Defeat returns you to your room with a 
 
 ## Current status
 
-This is an actively developed playable build, not a finished photorealistic release. The bedroom and first route have received the most detailed art passes. Old School Road has textured soil, animated grass verges, loose gravel, weathered stone boundaries, animated oaks, brambles, bus shelter, crossing and a separate county school asset and an animated crossing guard. The 1.2 km square region has roads, encounter sites, eight district destinations, and a complete campaign progression system; its distant districts still reuse architecture and need more individual environments. Human faces, animal deformation, terrain variety, and interactions inside additional buildings remain art and design priorities.
+This is an actively developed playable build, not a finished photorealistic release. The bedroom and first two districts have received the most detailed art passes. Old School Road has textured soil, animated grass verges, loose gravel, weathered stone boundaries, animated oaks, brambles, bus shelter, crossing and a separate county school asset and an animated crossing guard. Ash End has a modular lettings office, three-storey tenement wings, iron railings, a paved battle courtyard, tenant notices and an animated Landlord with property keys and an inspection clipboard. Its roadside sign promises “A PLACE TO PAY FOR”; its notices exempt the landlord's animals from his own no-pets rule. The 1.2 km square region has roads, encounter sites, eight district destinations, and a complete campaign progression system; its later districts still reuse architecture and need more individual environments. Human faces, animal deformation, terrain variety, and interactions inside additional buildings remain art and design priorities.
 
 Verified in the browser:
 
 - A fresh save: bedroom → letter → both doors → clinic → starter → rival victory.
+- A post-first-badge save fixture: walk from the school along the road to Ash End, enter the courtyard and defeat the Landlord using a level 9 cat and finite supplies, without overriding combat randomness. This is a progression check, not a statistical balance guarantee.
 - Save-fixture regression scenarios: weakened wild capture, full-party capture into storage, clinic-only transfers, persistent species records, inventory consumption, party persistence across reload, defeat and recovery, and the final multi-animal championship round through the ending and return home.
 - All eight animal exports: idle, walk, attack, hit, and faint clips, with skeletal skins and visual contact sheets.
 
 The ending scenario uses a late-game save fixture. It is not a claim that the entire campaign has been manually played from a fresh save.
+
+![Ash End lettings office and modular housing courtyard](docs/ash-end.png)
 
 ## Controls
 
@@ -44,12 +47,13 @@ Graphics, brightness, sensitivity, and camera movement are adjustable and saved 
 
 ## Blender asset pipeline
 
-The active build contains **81 individual GLB assets plus a Blender-rendered HDR sky and a Blender-authored interface paper texture**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
+The active build contains **88 individual GLB assets plus a Blender-rendered HDR sky and a Blender-authored interface paper texture**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
 
 - `assets/`: separate `.blend` sources with packed images. Open a single tree, chair, door, animal, road segment, or building and edit it directly.
 - `game-assets/asset-catalog.json`: the source/export mapping and local collision dimensions.
 - `game-assets/bedroom-layout.json`: placement data for separate furnishings.
 - `src/world.js`: placement and spatial batching of the exported modules. It does not generate world mesh primitives.
+- `src/route-one.js` and `src/ash-end.js`: independent district layouts, assembled from catalog-listed Blender modules.
 - `src/main.js`: first-person input, lighting, animation playback, encounters, battle presentation, UI, audio, and saves.
 - `src/rules.js`: combat, progression definitions, and save validation.
 - `assets/field-paper.blend`: editable stationery material; `scripts/author_interface_paper.py` exports the packed texture used by the game interface.
@@ -86,6 +90,8 @@ In a second terminal:
 ```sh
 npm test
 node scripts/opening-playtest.mjs --route-one
+node scripts/second-district-check.mjs
+node scripts/ash-end-visual-check.mjs
 node scripts/campaign-scenarios.mjs
 node scripts/animal-visual-check.mjs
 node scripts/interface-check.mjs

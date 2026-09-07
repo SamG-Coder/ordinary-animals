@@ -1151,6 +1151,20 @@ function buildInteractions() {
     1.3,
   );
   addTarget("gary", 24, -15, "Gary, apparently a professor", talkGary, 3, 1.5);
+  addTarget(
+    "ash-end-notice",
+    -227.2,
+    -21.5,
+    "Ash Court tenant notices",
+    () =>
+      speak("ASH END LETTINGS / NOTICE TO RESIDENTS", [
+        "NO PETS. The landlord's animals are registered as business equipment and are therefore exempt.",
+        "League challengers aged ten and over may apply without a guarantor. Any damage to the courtyard will be deducted from a deposit you have not paid yet.",
+        "REPAIR REQUEST 041: received. The damp has been reclassified as a character feature. No further action is planned.",
+      ]),
+    2.3,
+    1.5,
+  );
   const gary = person("gary", 24, -15);
   gary.rotation.y = 0;
   person("rival", 13, -9);
@@ -1196,7 +1210,11 @@ function buildInteractions() {
   );
   for (let i = 0; i < 8; i++) {
     const t = worldInfo.towns[i];
-    person(i === 0 ? "crossing-guard" : "gary", t.gymX, t.gymZ);
+    person(
+      i === 0 ? "crossing-guard" : i === 1 ? "landlord" : "gary",
+      t.gymX,
+      t.gymZ,
+    );
     addTarget(
       "gym" + i,
       t.gymX,
@@ -1734,7 +1752,9 @@ function frame(now) {
   if (!worldInfo) return;
   for (const a of actors) {
     if (a.scenery) {
-      a.root.visible = a.root.position.distanceToSquared(position) < 170 * 170;
+      const range = a.visibleDistance ?? 170;
+      a.root.visible =
+        a.root.position.distanceToSquared(position) < range * range;
       if (!a.root.visible) continue;
     }
     a.mixer.update(dt);
