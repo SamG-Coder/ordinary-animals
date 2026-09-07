@@ -54,7 +54,9 @@ Connecting roads use modular surfaces, subtle paint, asphalt repairs, shallow sc
 | Battle moves       | 1–4 during your turn                       |
 | Switch phone apps  | Phone Home and Back buttons                |
 
-Brightness, graphics quality, sensitivity and camera movement preferences save separately from the campaign. Touch controls are included; desktop remains the intended experience.
+On touch screens, drag the lower-left joystick to walk and drag the right side of the world to rotate the camera. Hold **SPRINT** while moving to run; tap **TORCH** to toggle the light. Face a target and tap **INTERACT**, or tap **PHONE** to use the apps. Touch movement controls hide while the phone is open. The controls account for portrait/landscape layouts and screen safe areas; physical mobile hardware testing is still pending.
+
+Brightness, graphics quality, sensitivity and camera movement preferences save separately from the campaign.
 
 ## Run locally
 
@@ -90,7 +92,7 @@ Repeat hash generation after any GLB re-export or catalog change, and include th
 
 ## Verification and development status
 
-This is an active development build. The latest completed checks are **160 passing unit/geometry tests**, a **successful 167-asset Blender source audit**, **59 passing no-input integration assertions**, and a **successful production build**. The image-hash manifest has been regenerated for the final exports. The integration run includes a finite-supply rival victory, a real Bag treatment restoring 33 HP for one medkit, save/load, phone navigation, visible battle modifiers, and rejected actions during pending or completed battles. Earlier county views remain documented in [the rebuild verification record](docs/rebuild-verification.md).
+This is an active development build. The latest completed checks are **165 passing unit/geometry tests**, a **successful 167-asset Blender source audit**, **59 passing no-input integration assertions**, and a **successful production build**. The image-hash manifest has been regenerated for the final exports. The integration run includes a finite-supply rival victory, a real Bag treatment for one medkit, save/load, phone navigation, visible battle modifiers, and rejected actions during pending or completed battles. Earlier county views remain documented in [the rebuild verification record](docs/rebuild-verification.md).
 
 The latest update adds the **3** phone shortcut, field treatment, battle-state safeguards and shader preparation for the actual render passes. The cat has revised Blender anatomy and packed tabby materials; all eight exported Faint animations have sampled floor-contact checks. A small pale patch remains on the cat's upper foreleg, and the animals remain stylized. The final hamster, rat and rabbit whisker-fold corrections passed source/export contact tests but were not visually re-rendered before this release.
 
@@ -117,6 +119,8 @@ node scripts/no-input-integration.mjs --run
 It opens an isolated headless browser and invokes game functions through a temporary test bridge, without mouse, keyboard or pointer-lock input. The completed 59-assertion run includes the opening SMS/bag/starter sequence, a finite-supply rival victory, purchases, treatment, phone navigation and save/load. Direct target callbacks bypass line-of-sight interaction selection. Reports and screenshots go to `artifacts/`, including `no-input-integration.json`. Running without `--run` starts no browser.
 
 The separate `scripts/no-input-world-review.mjs --run` harness captures named semantic views with two seconds to settle and three seconds of frame observations per view. Freeze runtime source files during a capture; navigation or hot reload invalidates that run. Results are local diagnostics, not a campaign completion claim.
+
+Mobile controls use a left analogue joystick and an independent right-side look gesture, with hold-to-sprint and torch buttons. Controls reset on menus, cancellation, focus loss and viewport changes. `node scripts/no-input-mobile-controls.mjs --run` verified visible, reachable controls at 390×844 and 844×390, actual frame-loop movement from direct controller state, and movement cancellation when opening the phone. Unit checks cover simultaneous movement/look pointer ownership, release order, deadzone and diagonal speed limits. These checks use no browser input events and do not replace physical iOS/Android testing.
 
 ## License
 

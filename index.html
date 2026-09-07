@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#111719" />
     <meta
       name="description"
@@ -68,15 +68,16 @@
       </div>
       <div id="stamina"><i></i></div>
       <button id="audio-btn" title="Toggle ambient audio">SOUND OFF</button>
-      <div id="touch">
-        <div id="pad">
-          <button data-key="w">↑</button>
-          <div>
-            <button data-key="a">←</button><button data-key="s">↓</button
-            ><button data-key="d">→</button>
-          </div>
+      <div id="touch" hidden>
+        <div id="move-stick" role="group" aria-label="Movement joystick: drag to walk">
+          <span id="move-stick-knob" aria-hidden="true"></span>
+          <span class="touch-move-label" aria-hidden="true">MOVE</span>
         </div>
-        <span>DRAG RIGHT SIDE TO LOOK</span>
+        <span id="touch-look-hint">DRAG RIGHT SIDE<br>TO LOOK</span>
+        <div class="touch-actions">
+          <button id="touch-sprint" type="button" aria-label="Hold to sprint">HOLD<br>SPRINT</button>
+          <button id="touch-torch" type="button" aria-label="Toggle torch" aria-pressed="false">TORCH</button>
+        </div>
       </div>
     </div>
     <div id="toast" role="status"></div>
@@ -240,6 +241,12 @@
             look or use the arrow keys. Shift sprints. F toggles your torch. E
             interacts. 3 or J opens your phone while exploring. Use Home to
             switch apps. During battle, 1–4 selects your animal’s moves.
+          </p>
+          <p>
+            On touch screens, drag the left joystick to walk. Drag the right
+            side of the world to turn and look up or down. Hold SPRINT while
+            moving to run. Tap TORCH for light, INTERACT when facing something,
+            and PHONE to open your apps. Movement pauses while the phone is open.
           </p>
           <p>
             Battle animals using their moves. Canines have an advantage over

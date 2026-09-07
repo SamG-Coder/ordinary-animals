@@ -40,6 +40,8 @@ import {
 import "./style.css";
 import "./game-ui.css";
 import "./phone-ui.css";
+import "./touch-controls.css";
+import { mountTouchControls } from "./touch-input.js";
 import { appendMessage } from "./phone-messages.js";
 import { mountPhone, phoneFocusables, phoneFocusWrap } from "./phone-ui.js";
 import { gameplayShortcut, ignoresGameKeyboard } from "./game-shortcuts.js";
@@ -222,12 +224,13 @@ let introDone = false,
 const animalGroup = new THREE.Group();
 const starterAnimals = new Map();
 let selectedStarter = null;
+let touchControls;
 scene.add(animalGroup);
 const lookControl = createLookControl({
   isLocked: () => document.pointerLockElement === renderer.domElement,
   request: () => renderer.domElement.requestPointerLock?.(),
   release: () => document.exitPointerLock?.(),
-  canLook: () => playing && !modal && !battle,
+  canLook: () => playing && !modal && !battle && !touchControls?.enabled,
   onFallback: () => {
     $("look-hint").textContent =
       "CLICK THE WORLD TO RESUME LOOK · OR DRAG / ARROW KEYS";
@@ -242,6 +245,7 @@ function updatePhone() {
     speaker: $("speaker").textContent,
   });
   heldPhone?.invalidate();
+  touchControls?.sync();
 }
 updatePhone();
 function showError(error) {
@@ -2335,37 +2339,44 @@ function interact() {
   activeTarget?.fn();
 }
 $("interact-btn").onclick = interact;
+function toggleTorch() {
+  if (!playing || modal || battle) return;
+  flashlight.visible = !flashlight.visible;
+  if (torch) torch.visible = flashlight.visible;
+  $("touch-torch").setAttribute("aria-pressed", String(flashlight.visible));
+}
+touchControls = mountTouchControls({
+  canvas: renderer.domElement, root: $("touch"), stick: $("move-stick"),
+  knob: $("move-stick-knob"), sprint: $("touch-sprint"), torch: $("touch-torch"),
+  canExplore: () => playing && !modal && !battle,
+  onTorch: toggleTorch,
+  onLook: (dx, dy) => {
+    yaw -= dx * lookSensitivity;
+    pitch = Math.max(-1.3, Math.min(1.3, pitch - dy * lookSensitivity));
+  },
+});
 function requestLook() {
   if (!playing || modal || battle) return;
   lookControl.engage();
 }
 renderer.domElement.addEventListener("pointerdown", (e) => {
   if (!playing || modal || battle) return;
-  if (e.pointerType === "touch") {
-    if (e.clientX > innerWidth * 0.4) lookDrag = true;
-  } else {
-    lookDrag = true;
-    requestLook();
-  }
+  if (e.pointerType === "touch" || e.pointerType === "pen" || e.button !== 0) return;
+  touchControls.useMouse();
+  lookDrag = true;
+  requestLook();
 });
-window.addEventListener("pointerup", () => (lookDrag = false));
-window.addEventListener("pointercancel", () => (lookDrag = false));
-let previousTouch = null;
+const releaseMouseDrag = e => { if (e.pointerType === "mouse") lookDrag = false; };
+window.addEventListener("pointerup", releaseMouseDrag);
+window.addEventListener("pointercancel", releaseMouseDrag);
 window.addEventListener("pointermove", (e) => {
-  if (!playing || modal || battle) return;
+  if (!playing || modal || battle || e.pointerType !== "mouse") return;
   if (document.pointerLockElement === renderer.domElement || lookDrag) {
-    let dx = e.movementX,
-      dy = e.movementY;
-    if (e.pointerType === "touch") {
-      dx = previousTouch ? e.clientX - previousTouch.x : 0;
-      dy = previousTouch ? e.clientY - previousTouch.y : 0;
-      previousTouch = { x: e.clientX, y: e.clientY };
-    }
+    const dx = e.movementX, dy = e.movementY;
     yaw -= dx * lookSensitivity;
     pitch = Math.max(-1.3, Math.min(1.3, pitch - dy * lookSensitivity));
   }
 });
-window.addEventListener("pointerup", () => (previousTouch = null));
 document.addEventListener("pointerlockerror", () => {
   $("look-hint").textContent = "DRAG TO LOOK · ARROW KEYS ALSO TURN";
 });
@@ -2405,10 +2416,7 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (e.key.toLowerCase() === "e") interact();
-  if (e.key.toLowerCase() === "f") {
-    flashlight.visible = !flashlight.visible;
-    if (torch) torch.visible = flashlight.visible;
-  }
+  if (e.key.toLowerCase() === "f") toggleTorch();
 });
 window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur", () => {
@@ -2416,14 +2424,6 @@ window.addEventListener("blur", () => {
   lookDrag = false;
   save();
 });
-for (const b of document.querySelectorAll("#pad button")) {
-  b.onpointerdown = (e) => {
-    e.preventDefault();
-    b.setPointerCapture(e.pointerId);
-    keys.add(b.dataset.key);
-  };
-  b.onpointerup = b.onpointercancel = () => keys.delete(b.dataset.key);
-}
 
 function tone(f, duration = 0.1, volume = 0.05, delay = 0) {
   if (!soundOn) return;
@@ -2615,13 +2615,13 @@ function frame(now) {
     if (keys.has("arrowright")) yaw -= dt * 1.4;
     if (keys.has("arrowup")) pitch = Math.min(1.3, pitch + dt);
     if (keys.has("arrowdown")) pitch = Math.max(-1.3, pitch - dt);
-    let x = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0),
-      z = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0);
+    let x = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0) + touchControls.input.axes.x,
+      z = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0) + touchControls.input.axes.z;
     if (x || z) {
-      const l = Math.hypot(x, z);
+      const l = Math.max(1, Math.hypot(x, z));
       x /= l;
       z /= l;
-      const running = keys.has("shift") && stamina > 2,
+      const running = (keys.has("shift") || touchControls.input.sprinting) && stamina > 2,
         speed = running ? 6.6 : 3.2;
       const dx = (x * Math.cos(yaw) + z * Math.sin(yaw)) * speed * dt,
         dz = (-x * Math.sin(yaw) + z * Math.cos(yaw)) * speed * dt;
