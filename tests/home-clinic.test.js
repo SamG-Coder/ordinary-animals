@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { Vector3 } from "three";
+import { exportedBounds } from "./lib/scene-geometry.js";
 import {
   buildHomeClinic,
   HOME_CLINIC_ROOMS,
@@ -42,6 +44,31 @@ function layout() {
 function inside(room, x, z) {
   return x >= room.minX && x <= room.maxX && z >= room.minZ && z <= room.maxZ;
 }
+
+test("both kitchen chairs face the dining table according to the exported seat and back geometry", () => {
+  const { placements } = layout();
+  const kitchen = HOME_CLINIC_ROOMS.find((room) => room.id === "home-kitchen");
+  const table = placements.find((p) => p.name === "home-dining-table");
+  const chairs = placements.filter((p) => p.name === "chair" && inside(kitchen, p.x, p.z));
+  assert.equal(chairs.length, 2);
+  const seat = exportedBounds(catalog, "chair", (node) => node.name === "Chair seat").getCenter(new Vector3());
+  const back = exportedBounds(catalog, "chair", (node) => node.name === "Chair back").getCenter(new Vector3());
+  const top = exportedBounds(catalog, "home-dining-table", (node) => node.name === "Formica dining top").getCenter(new Vector3());
+  const world = (point, p) => new Vector3(
+    p.x + (point.x * Math.cos(p.angle) + point.z * Math.sin(p.angle)) * p.scale,
+    0,
+    p.z + (-point.x * Math.sin(p.angle) + point.z * Math.cos(p.angle)) * p.scale,
+  );
+  const centre = world(top, table);
+  for (const chair of chairs) {
+    const seatCentre = world(seat, chair), backCentre = world(back, chair);
+    const facing = seatCentre.clone().sub(backCentre).normalize();
+    const toTable = centre.clone().sub(seatCentre).normalize();
+    assert.ok(facing.dot(toTable) > .99, `Kitchen chair at ${chair.x},${chair.z} faces away from the table`);
+    assert.ok(backCentre.distanceTo(centre) > seatCentre.distanceTo(centre) + .15,
+      `Kitchen chair at ${chair.x},${chair.z} puts its back between the seat and the table`);
+  }
+});
 
 // Flood the actual collider geometry at 10 cm intervals. Restricting the search
 // to interior rectangles prevents an exterior detour from hiding a blocked door.

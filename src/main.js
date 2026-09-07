@@ -41,6 +41,8 @@ import "./style.css";
 import "./game-ui.css";
 import "./phone-ui.css";
 import "./touch-controls.css";
+import "./mobile-battle.css";
+import { portraitBattleFrame } from "./battle-framing.js";
 import { mountTouchControls } from "./touch-input.js";
 import { appendMessage } from "./phone-messages.js";
 import { mountPhone, phoneFocusables, phoneFocusWrap } from "./phone-ui.js";
@@ -2518,6 +2520,7 @@ const torchOffset = new THREE.Vector3(),
   lightOffset = new THREE.Vector3();
 const companionPrevious = new THREE.Vector3();
 const doorVisibility = { doorOpen: false, frontOpen: false };
+let battleFramingKey = "";
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min((now - last) / 1000, 0.045);
@@ -2691,9 +2694,16 @@ function frame(now) {
       camera.rotation.set(-0.035, 0.34, 0, "YXZ");
     }
   }
-  const targetFov = battle ? 52 : 68;
+  const portraitFrame = portraitBattleFrame(innerWidth, innerHeight, Boolean(battle));
+  const framingKey = `${Boolean(portraitFrame)}:${innerWidth}:${innerHeight}`;
+  if (framingKey !== battleFramingKey) {
+    battleFramingKey = framingKey;
+    if (portraitFrame) camera.setViewOffset(innerWidth, innerHeight, 0, portraitFrame.offsetY, innerWidth, innerHeight);
+    else camera.clearViewOffset();
+  }
+  const targetFov = portraitFrame?.fov ?? (battle ? 52 : 68);
   if (Math.abs(camera.fov - targetFov) > 0.01) {
-    camera.fov = cameraMotion
+    camera.fov = cameraMotion && !portraitFrame
       ? THREE.MathUtils.damp(camera.fov, targetFov, 6, dt)
       : targetFov;
     camera.updateProjectionMatrix();
@@ -2705,7 +2715,8 @@ function frame(now) {
         torchOffset.set(0.2, -0.2, -0.38).applyQuaternion(camera.quaternion),
       );
     torch.quaternion.copy(camera.quaternion);
-    torch.rotateX(Math.PI / 2);
+    // The Blender export points from grip to lens along +Y; camera forward is -Z.
+    torch.rotateX(-Math.PI / 2);
     torch.visible = flashlight.visible && !battle;
   }
   flashlight.position

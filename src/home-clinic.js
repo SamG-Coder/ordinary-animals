@@ -312,8 +312,9 @@ export function buildHomeClinic({ place }) {
   place("kitchen-counter", -9.48, 6, 0, Math.PI / 2);
   place("kitchen-fridge", -7.8, 4.55);
   place("home-dining-table", -5.8, 6);
-  place("chair", -5.8, 6.93, 0, Math.PI);
-  place("chair", -5.8, 5.06);
+  // The Blender chair's back is at local +Z, so its seat faces local -Z.
+  place("chair", -5.8, 6.93);
+  place("chair", -5.8, 5.06, 0, Math.PI);
 
   place("family-sofa", 7.8, 4.64);
   const television = place(

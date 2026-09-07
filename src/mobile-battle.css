@@ -1,0 +1,193 @@
+/* Portrait battle view: retain the Blender handset's proportions and let its
+   lower body extend below the screen, exposing the live fight above it. */
+@media (max-width: 650px) and (orientation: portrait) {
+  #phone.in-battle {
+    --battle-phone-width: min(386px, 96vw);
+    top: 38dvh;
+    right: 50%;
+    bottom: auto;
+    transform: translateX(50%);
+    width: var(--battle-phone-width);
+    height: auto;
+    aspect-ratio: 74 / 157;
+  }
+
+  #phone.in-battle > .phone-hardware {
+    top: 6.3694267516%;
+    right: 6.7567567568%;
+    bottom: auto;
+    left: 6.7567567568%;
+    height: calc(
+      62dvh - var(--battle-phone-width) * 0.1351351351 -
+        max(8px, env(safe-area-inset-bottom))
+    );
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  #phone.in-battle .phone-status,
+  #phone.in-battle .phone-appbar small,
+  #phone.in-battle #phone-home-bar {
+    display: none;
+  }
+
+  #phone.in-battle .phone-appbar {
+    padding: 0 5px;
+    gap: 4px;
+    min-height: 44px;
+  }
+
+  #phone.in-battle .phone-appbar button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  #phone.in-battle .phone-appbar strong {
+    font-size: 11px;
+    letter-spacing: 0.4px;
+  }
+
+  #phone.in-battle #phone-screen {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: 5px;
+  }
+
+  #phone.in-battle .phone-page {
+    padding: 8px;
+  }
+
+  #phone.in-battle #battle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-content: start;
+    gap: 5px;
+    height: 100%;
+    min-height: 252px;
+    padding: 6px;
+  }
+
+  #phone.in-battle .battle-top {
+    grid-column: 1 / -1;
+    margin: 0;
+    gap: 4px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  #phone.in-battle .health {
+    min-width: 0;
+    margin: 0;
+    padding: 5px;
+    border-width: 1px;
+    box-shadow: inset 0 0 0 1px #080a08;
+  }
+
+  #phone.in-battle .health > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+  }
+
+  #phone.in-battle .health strong {
+    font-size: 14px;
+    line-height: 1.15;
+  }
+
+  #phone.in-battle .health span,
+  #phone.in-battle .health small {
+    font-size: 11px;
+    line-height: 1.25;
+    text-align: left;
+    white-space: normal;
+  }
+
+  #phone.in-battle .health-track {
+    height: 8px;
+    margin: 5px 0 4px 22px;
+  }
+
+  #phone.in-battle .health-track::before {
+    left: -23px;
+    top: -3px;
+    font-size: 11px;
+  }
+
+  #phone.in-battle .battle-console {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+    margin: 0;
+  }
+
+  #phone.in-battle .battle-menu {
+    order: 0;
+    flex: none;
+    justify-content: flex-start;
+  }
+
+  #phone.in-battle .battle-message {
+    order: 1;
+    flex: 1 1 50px;
+    min-height: 32px;
+    margin: 0;
+    padding: 5px 6px;
+    border-width: 1px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    touch-action: pan-y;
+  }
+
+  #phone.in-battle #battle-log {
+    min-height: 0;
+    margin: 0 0 5px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  #phone.in-battle #capture-help,
+  #phone.in-battle #battle-advice {
+    font-size: 11px;
+    line-height: 1.3;
+    margin: 4px 0 0;
+  }
+
+  #phone.in-battle #battle-root,
+  #phone.in-battle #move-buttons,
+  #phone.in-battle #battle-actions {
+    gap: 4px;
+  }
+
+  #phone.in-battle #battle-root button,
+  #phone.in-battle #move-buttons button,
+  #phone.in-battle #battle-actions button,
+  #phone.in-battle #battle-continue {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 5px 4px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  #phone.in-battle #move-buttons small,
+  #phone.in-battle #battle-actions span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #phone.in-battle #move-buttons small {
+    margin-top: 2px;
+  }
+
+  /* The 44px phone Back button already returns the battle to its root menu. */
+  #phone.in-battle #battle-back {
+    display: none;
+  }
+}
