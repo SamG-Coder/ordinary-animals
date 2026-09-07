@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f0e5" />
+    <meta
+      name="description"
+      content="An absurd, cozy 3D animal adventure. You're ten. Your professor is a guy in a garage. Your starter is somebody's hamster."
+    />
+    <title>Ordinary Animals — Extraordinary Liability</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%232f493a'/%3E%3Ctext y='.9em' x='12' font-size='76'%3E✿%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div id="world" aria-label="3D neighborhood"></div>
+    <div class="grain"></div>
+    <header>
+      <a class="brand" href="./" aria-label="Ordinary Animals home"
+        ><span class="brandmark">✳</span
+        ><span>ORDINARY<br />ANIMALS<span class="brand-dot">®? </span></span></a
+      >
+      <nav>
+        <span class="edition">A VERY UNOFFICIAL ADVENTURE</span
+        ><button id="guide-btn" class="nav-btn">Field guide <span>↗</span></button
+        ><button id="sound-btn" class="sound-btn" aria-label="Enable sound" title="Enable sound">
+          ♪<span class="sound-slash">/</span>
+        </button>
+      </nav>
+    </header>
+    <main id="intro">
+      <div class="eyebrow">
+        <span class="tiny-star">✦</span> LITTLE DITCH. POPULATION: MOSTLY FINE.
+      </div>
+      <h1>Ordinary<br /><em>animals.</em><span class="title-flower">✳</span></h1>
+      <div class="subtitle">Extraordinary liability.</div>
+      <p class="intro-copy">
+        You’re ten. He’s apparently a professor.<br />That’s apparently enough to save the
+        neighborhood.
+      </p>
+      <button id="begin" class="primary" disabled>Growing the neighborhood… <span>↗</span></button>
+      <div class="intro-note"><span class="dot"></span> THREE STARTERS. ZERO QUALIFICATIONS.</div>
+      <div class="prof-note">
+        <span class="note-pin"></span>“Your parents said it’s probably fine.”<small
+          >— GARY, MAN WITH A LAB COAT</small
+        >
+      </div>
+    </main>
+    <div id="world-caption">
+      <span class="coordinate">35° 00′ N &nbsp; SOMEWHERE IN THE SUBURBS</span>
+      <h2>A very big world.<br /><em>A very small allowance.</em></h2>
+      <span class="scene-caption"
+        >A tiny town, made in Blender. A questionable adventure, made for you.</span
+      >
+    </div>
+    <div id="loading-error" hidden></div>
+    <div id="hud" hidden>
+      <section class="quest">
+        <span class="eyebrow">THE NEIGHBORHOOD LEAGUE</span>
+        <h3 id="quest-title">Speak to Professor Gary</h3>
+        <p id="quest-copy">The lab is the garage. Obviously.</p>
+        <div id="stamps">
+          <span>01</span><span>02</span><span>03</span><small>LOCAL LEGEND LICENSE</small>
+        </div>
+      </section>
+      <div class="location-label">
+        <span class="dot"></span> LITTLE DITCH <small>GOLDEN HOUR, INDEFINITELY</small>
+      </div>
+      <div id="companion-card">
+        <img id="companion-img" alt="" />
+        <div>
+          <small>YOUR EMOTIONAL SUPPORT ANIMAL</small><b id="companion-name"></b
+          ><span id="companion-description"></span>
+        </div>
+      </div>
+      <div class="controls">
+        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span
+        ><span><kbd>E</kbd> interact</span><span>click ground to walk</span>
+      </div>
+      <button id="interact" class="primary" hidden></button>
+      <button id="home-btn" class="map-home" title="Return to Gary">
+        ⌂ <span>Back to Gary</span>
+      </button>
+      <div id="touch-controls">
+        <button data-move="up" aria-label="Walk forward">↑</button>
+        <div>
+          <button data-move="left" aria-label="Walk left">←</button
+          ><button data-move="down" aria-label="Walk backward">↓</button
+          ><button data-move="right" aria-label="Walk right">→</button>
+        </div>
+      </div>
+    </div>
+    <div id="toast" role="status"></div>
+    <div id="dialogue" class="modal-backdrop" hidden>
+      <section class="dialogue-panel">
+        <div class="dialogue-portrait">G<span>“PhD”</span></div>
+        <div class="dialogue-body">
+          <span class="eyebrow" id="speaker">PROFESSOR GARY · CREDENTIALS PENDING</span>
+          <p id="dialogue-text"></p>
+          <button id="dialogue-next" class="text-button">Go on… <span>→</span></button>
+        </div>
+      </section>
+    </div>
+    <div id="starter" class="modal-backdrop" hidden>
+      <section class="starter-panel">
+        <span class="eyebrow">A LIFE-CHANGING DECISION. ALLEGEDLY.</span>
+        <h2>Choose your <em>perfectly normal</em> companion.</h2>
+        <p>No fire. No lightning. One of them does know “sit.”</p>
+        <div id="starter-cards"></div>
+        <small>Every starter can complete the adventure. Pick your kind of trouble.</small>
+      </section>
+    </div>
+    <div id="encounter" class="modal-backdrop" hidden>
+      <section class="encounter-panel">
+        <div class="encounter-heading">
+          <span class="eyebrow">A WILD SOCIAL SITUATION!</span
+          ><button id="leave-encounter" class="close-btn" aria-label="Leave encounter">×</button>
+        </div>
+        <div class="encounter-pets">
+          <img id="battle-companion" alt="Your companion" /><span>✦</span
+          ><img id="battle-wild" alt="Neighborhood animal" />
+        </div>
+        <div class="encounter-title">
+          <h2 id="encounter-name"></h2>
+          <span id="encounter-mood"></span>
+        </div>
+        <p id="encounter-story"></p>
+        <div class="meter-label"><span>TRUST</span><b id="trust-value">0 / 100</b></div>
+        <div class="meter"><i id="trust-meter"></i></div>
+        <div class="meter-label confidence">
+          <span>YOUR CONFIDENCE</span><b id="confidence-value">100 / 100</b>
+        </div>
+        <div class="meter confidence"><i id="confidence-meter"></i></div>
+        <p id="battle-log" role="status"></p>
+        <div id="moves">
+          <button data-move="reassure">
+            <span>♡</span> Reassure<small>For a nervous animal</small></button
+          ><button data-move="snack">
+            <span>◒</span> Offer a snack<small>For a hungry animal</small></button
+          ><button data-move="play">
+            <span>✳</span> Play it cool<small>For a restless animal</small>
+          </button>
+        </div>
+        <button id="encounter-done" class="primary" hidden>
+          Back to the neighborhood <span>→</span>
+        </button>
+      </section>
+    </div>
+    <div id="guide" class="modal-backdrop" hidden>
+      <section class="guide-panel">
+        <button id="close-guide" class="close-btn" aria-label="Close field guide">×</button
+        ><span class="eyebrow">DEPARTMENT OF UNNECESSARY ADVENTURES</span>
+        <h2>Your field <em>guide.</em></h2>
+        <p>
+          You are ten years old. Gary owns a lab coat. Together, these facts have somehow produced
+          an expedition.
+        </p>
+        <div class="guide-grid">
+          <div>
+            <b>01 / ADOPT A COLLEAGUE</b>
+            <p>Talk to Gary and choose a cat, dog, or hamster. All three are equally qualified.</p>
+          </div>
+          <div>
+            <b>02 / READ THE ROOM</b>
+            <p>
+              Walk to the glowing markers. Match your approach to the animal’s mood to build trust
+              before you lose confidence.
+            </p>
+          </div>
+          <div>
+            <b>03 / GO SLIGHTLY FARTHER</b>
+            <p>
+              Earn three stamps in each region and report to Gary. Complete the town, woods, and
+              coast, then face his champion hamster.
+            </p>
+          </div>
+        </div>
+        <p class="guide-controls">
+          <kbd>WASD</kbd> / <kbd>↑↓←→</kbd> Move &nbsp; <kbd>E</kbd> Interact &nbsp;
+          <kbd>Esc</kbd> Close<br />Or click the ground to walk. Your progress saves on this device.
+        </p>
+        <button id="reset-btn" class="text-button">Start a fresh adventure ↗</button>
+        <p id="reset-message" hidden>
+          Reset this device’s progress?
+          <button id="confirm-reset" class="text-button">Yes, start again</button>
+        </p>
+        <small
+          >Original game & assets · MIT · SamGCoder<br />Not affiliated with Pokémon, Nintendo, or
+          any actual educational institution.</small
+        >
+      </section>
+    </div>
+    <footer id="intro-footer">
+      <span>AN ORDINARY ANIMALS ORIGINAL</span
+      ><span
+        >WALK AROUND. MAKE FRIENDS. QUESTION THE ADULTS. <span class="footer-star">✳</span></span
+      >
+    </footer>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
