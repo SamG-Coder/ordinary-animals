@@ -380,5 +380,81 @@
   "porch-canopy": {
     "source": "assets/porch-canopy.blend",
     "model": "models/porch-canopy.glb"
+  },
+  "stone-wall-4m": {
+    "source": "assets/stone-wall-4m.blend",
+    "model": "models/stone-wall-4m.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 4,
+        "d": 0.45
+      }
+    ]
+  },
+  "bramble-patch": {
+    "source": "assets/bramble-patch.blend",
+    "model": "models/bramble-patch.glb"
+  },
+  "route-sign": {
+    "source": "assets/route-sign.blend",
+    "model": "models/route-sign.glb"
+  },
+  "pedestrian-crossing": {
+    "source": "assets/pedestrian-crossing.blend",
+    "model": "models/pedestrian-crossing.glb"
+  },
+  "crossing-beacon": {
+    "source": "assets/crossing-beacon.blend",
+    "model": "models/crossing-beacon.glb"
+  },
+  "bus-shelter": {
+    "source": "assets/bus-shelter.blend",
+    "model": "models/bus-shelter.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": -0.6,
+        "w": 3,
+        "d": 0.08
+      },
+      {
+        "x": -1.45,
+        "z": 0,
+        "w": 0.08,
+        "d": 1.3
+      },
+      {
+        "x": 1.45,
+        "z": 0,
+        "w": 0.08,
+        "d": 1.3
+      }
+    ]
+  },
+  "oak-tree": {
+    "source": "assets/oak-tree.blend",
+    "model": "models/oak-tree.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 0.5,
+        "d": 0.5
+      }
+    ]
+  },
+  "county-school": {
+    "source": "assets/county-school.blend",
+    "model": "models/county-school.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 14,
+        "d": 12
+      }
+    ]
   }
 }

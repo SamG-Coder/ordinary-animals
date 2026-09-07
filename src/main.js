@@ -961,6 +961,32 @@ function buildInteractions() {
     1.2,
   );
   addTarget("bed", 2, 0.6, "Rest your animals", rest, 2, 0.7);
+  addTarget(
+    "school-timetable",
+    -71,
+    67,
+    "School bus timetable",
+    () =>
+      speak("COUNTY TRANSPORT", [
+        "School service suspended. Children enrolled in the Animal League are considered independent travellers.",
+        "Wickmere County School: follow the road to the crossing, then take the path through the gap in the stone wall. The crossing guard is accepting challengers outside.",
+      ]),
+    2.5,
+    1.5,
+  );
+  addTarget(
+    "school-notice",
+    -99,
+    50.1,
+    "School notice board",
+    () =>
+      speak("NOTICE TO PARENTS", [
+        "Lessons have been suspended during league intake. The school considers competitive animal handling equivalent to mathematics, geography and pastoral care.",
+        "Please collect your child at the end of the championship. No date has been supplied.",
+      ]),
+    2,
+    1.3,
+  );
   addTarget("gary", 24, -15, "Gary, apparently a professor", talkGary, 3, 1.5);
   const gary = person("gary", 24, -15);
   gary.rotation.y = 0;
@@ -1479,6 +1505,10 @@ function frame(now) {
   time += dt;
   if (!worldInfo) return;
   for (const a of actors) {
+    if (a.scenery) {
+      a.root.visible = a.root.position.distanceToSquared(position) < 170 * 170;
+      if (!a.root.visible) continue;
+    }
     a.mixer.update(dt);
     if (a.stationary || (battle && (a === battle.left || a === battle.right)))
       continue;
@@ -1687,6 +1717,13 @@ function frame(now) {
   composer.render();
 }
 function regionName() {
+  if (Math.abs(position.x + 93) < 17 && position.z > 36 && position.z < 64)
+    return "WICKMERE / COUNTY SCHOOL";
+  const routeProgress = (-120 * position.x + 70 * (position.z - 20)) / 19300;
+  const routeDistance =
+    Math.abs(70 * position.x + 120 * (position.z - 20)) / Math.sqrt(19300);
+  if (routeProgress > 0.18 && routeProgress < 0.96 && routeDistance < 19)
+    return "WICKMERE / OLD SCHOOL ROAD";
   let nearest = -1,
     distance = Infinity;
   worldInfo.towns.forEach((t, i) => {

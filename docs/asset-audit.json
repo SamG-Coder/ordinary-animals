@@ -1,5 +1,5 @@
 {
-  "assetCount": 70,
+  "assetCount": 78,
   "assets": [
     {
       "asset": "bed",
@@ -326,7 +326,7 @@
       "source": "assets/road-straight-12m.blend",
       "model": "models/road-straight-12m.glb",
       "editableObjects": 6,
-      "packedImages": 2,
+      "packedImages": 3,
       "armatures": 0
     },
     {
@@ -334,7 +334,7 @@
       "source": "assets/road-junction-12m.blend",
       "model": "models/road-junction-12m.glb",
       "editableObjects": 1,
-      "packedImages": 2,
+      "packedImages": 3,
       "armatures": 0
     },
     {
@@ -559,6 +559,70 @@
       "model": "models/porch-canopy.glb",
       "editableObjects": 6,
       "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "stone-wall-4m",
+      "source": "assets/stone-wall-4m.blend",
+      "model": "models/stone-wall-4m.glb",
+      "editableObjects": 45,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "bramble-patch",
+      "source": "assets/bramble-patch.blend",
+      "model": "models/bramble-patch.glb",
+      "editableObjects": 29,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "route-sign",
+      "source": "assets/route-sign.blend",
+      "model": "models/route-sign.glb",
+      "editableObjects": 6,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "pedestrian-crossing",
+      "source": "assets/pedestrian-crossing.blend",
+      "model": "models/pedestrian-crossing.glb",
+      "editableObjects": 9,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "crossing-beacon",
+      "source": "assets/crossing-beacon.blend",
+      "model": "models/crossing-beacon.glb",
+      "editableObjects": 10,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "bus-shelter",
+      "source": "assets/bus-shelter.blend",
+      "model": "models/bus-shelter.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "oak-tree",
+      "source": "assets/oak-tree.blend",
+      "model": "models/oak-tree.glb",
+      "editableObjects": 2,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "county-school",
+      "source": "assets/county-school.blend",
+      "model": "models/county-school.glb",
+      "editableObjects": 1601,
+      "packedImages": 0,
       "armatures": 0
     }
   ]

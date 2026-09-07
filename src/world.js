@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { buildRouteOne } from "./route-one.js";
 
 // Placement only. All meshes, UVs, surface images and object animation come from Blender files.
 export function assembleWorld(scene, assets, catalog, roomLayout) {
@@ -20,7 +21,12 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
     [275, -60],
     [220, 160],
     [45, 250],
-  ].map(([x, z]) => ({ x, z, gymX: x + 17, gymZ: z - 9 }));
+  ].map(([x, z], i) => ({
+    x,
+    z,
+    gymX: x + (i === 0 ? 27 : 17),
+    gymZ: z - (i === 0 ? 38 : 9),
+  }));
   function colliders(name, x, z, ry, sx = 1, sz = sx) {
     for (const c of catalog[name]?.colliders || []) {
       const cos = Math.cos(ry),
@@ -60,7 +66,13 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
     if (assets[name].animations.length) {
       const mixer = new THREE.AnimationMixer(obj);
       assets[name].animations.forEach((c) => mixer.clipAction(c).play());
-      animated.push({ root: obj, mixer, stationary: true, actions: {} });
+      animated.push({
+        root: obj,
+        mixer,
+        stationary: true,
+        scenery: true,
+        actions: {},
+      });
     }
     return obj;
   }
@@ -174,8 +186,12 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
   ])
     place("puddle", x, z, 0, x * 0.3, s);
   // Other sections reuse the same small exported building and road assets.
-  for (const t of towns) {
-    place("league-building", t.x + 17, t.z - 17);
+  for (const [index, t] of towns.entries()) {
+    place(
+      index === 0 ? "county-school" : "league-building",
+      t.gymX,
+      t.gymZ - 8,
+    );
     for (const [dx, dz] of [
       [-24, 20],
       [-10, 20],
@@ -291,6 +307,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
     place("rock", x, z, 0, random() * 6.28, 0.6 + random());
   }
 
+  buildRouteOne({ place, lamp });
   const chunks = new Map();
   function chunk(x, z) {
     const cx = Math.floor(x / 80),

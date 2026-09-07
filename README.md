@@ -16,7 +16,7 @@ Campaign progress saves in this browser. Defeat returns you to your room with a 
 
 ## Current status
 
-This is an actively developed playable build, not a finished photorealistic release. The opening has received the most detailed art pass. The 1.2 km square region has roads, encounter sites, eight district destinations, and a complete campaign progression system; its distant districts still reuse architecture and need more individual environments. Human faces, animal deformation, terrain variety, and interactions inside additional buildings remain art and design priorities.
+This is an actively developed playable build, not a finished photorealistic release. The bedroom and first route have received the most detailed art passes. Old School Road has its own stone boundaries, animated oaks, brambles, bus shelter, crossing and a separate county school asset. The 1.2 km square region has roads, encounter sites, eight district destinations, and a complete campaign progression system; its distant districts still reuse architecture and need more individual environments. Human faces, animal deformation, terrain variety, and interactions inside additional buildings remain art and design priorities.
 
 Verified in the browser:
 
@@ -42,7 +42,7 @@ Graphics, brightness, sensitivity, and camera movement are adjustable and saved 
 
 ## Blender asset pipeline
 
-The active build contains **70 individual GLB assets plus a Blender-rendered HDR sky**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
+The active build contains **78 individual GLB assets plus a Blender-rendered HDR sky**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
 
 - `assets/`: separate `.blend` sources with packed images. Open a single tree, chair, door, animal, road segment, or building and edit it directly.
 - `game-assets/asset-catalog.json`: the source/export mapping and local collision dimensions.
@@ -82,7 +82,7 @@ In a second terminal:
 
 ```sh
 npm test
-node scripts/opening-playtest.mjs
+node scripts/opening-playtest.mjs --route-one
 node scripts/campaign-scenarios.mjs
 node scripts/animal-visual-check.mjs
 node scripts/interface-check.mjs

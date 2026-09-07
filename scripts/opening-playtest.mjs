@@ -30,9 +30,18 @@ async function look(x, z, y = 1.3) {
 }
 async function walk(x, z) {
   let iterations = 0;
-  while (iterations++ < 100) {
+  let lastPosition,
+    stalled = 0;
+  while (iterations++ < 300) {
     const p = await page.evaluate(() => window.__debug.position());
     if (Math.hypot(p.x - x, p.z - z) < 0.2) return;
+    stalled =
+      lastPosition &&
+      Math.hypot(p.x - lastPosition.x, p.z - lastPosition.z) < 0.01
+        ? stalled + 1
+        : 0;
+    if (stalled > 20) break;
+    lastPosition = p;
     await look(x, z, p.y);
     await page.keyboard.down("w");
     await page.waitForTimeout(130);
@@ -105,6 +114,68 @@ try {
     await page.evaluate(() => localStorage.getItem("ordinary-animals-dark-v2")),
   );
   expect(saved.wins).toContain("rival");
+  if (process.argv.includes("--route-one")) {
+    await walk(24, -12.5);
+    await interact(24, -15, 1.5, "gary");
+    await dialogue();
+    await walk(12, 10);
+    await walk(0, 20);
+    for (const [x, z] of [
+      [-24, 34],
+      [-60, 55],
+      [-96, 76],
+      [-120, 90],
+      [-93, 80],
+      [-93, 54.4],
+    ]) {
+      await walk(x, z);
+      console.log(`Walked to ${x}, ${z}`);
+      if (x === -60) {
+        await look(-90, 70);
+        await page.screenshot({ path: "artifacts/old-school-road.png" });
+      }
+    }
+    await look(-93, 44, 3);
+    await page.screenshot({ path: "artifacts/county-school.png" });
+    await interact(-93, 52, 1.5, "gym0");
+    await dialogue();
+    for (let turn = 0; turn < 45; turn++) {
+      await page.waitForFunction(
+        () =>
+          !document.getElementById("battle-continue").hidden ||
+          Boolean(
+            document.querySelector("#move-buttons button:not([disabled])"),
+          ),
+      );
+      if (await page.locator("#battle-continue").isVisible()) break;
+      const hp = (await page.locator("#ally-status").textContent()).match(
+        /(\d+)\/(\d+)/,
+      );
+      if (
+        Number(hp[1]) < Number(hp[2]) * 0.5 &&
+        (await page.locator("#heal-btn").isEnabled())
+      )
+        await page.click("#heal-btn");
+      else {
+        const enemy = await page.locator("#enemy-name").textContent();
+        await page
+          .locator("#move-buttons button")
+          .nth(enemy === "Rat" ? 0 : 1)
+          .click();
+      }
+      await page.waitForTimeout(100);
+    }
+    await page.click("#battle-continue");
+    const progress = JSON.parse(
+      await page.evaluate(() =>
+        localStorage.getItem("ordinary-animals-dark-v2"),
+      ),
+    );
+    expect(progress.badges).toContain(0);
+    console.log(
+      "PASS: real walk along Old School Road, school entrance, first badge with finite supplies",
+    );
+  }
   console.log(
     JSON.stringify({
       result: "Bedroom → letter → two doors → clinic → starter → rival victory",
