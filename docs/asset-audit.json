@@ -633,5 +633,12 @@
       "packedImages": 0,
       "armatures": 0
     }
+  ],
+  "interfaceSources": [
+    {
+      "source": "assets/field-paper.blend",
+      "texture": "src/ui/field-paper.png",
+      "packedImages": 1
+    }
   ]
 }

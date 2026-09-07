@@ -1,0 +1,649 @@
+/* Game interface: printed county paperwork inside the familiar boxed RPG grammar.
+   The paper image is authored and packed in assets/field-paper.blend. */
+:root {
+  --paper: #e3dec5;
+  --accent: #d3bc78;
+  --line: #b8b79888;
+  font-family: "Courier New", monospace;
+}
+button {
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  border: 2px solid var(--line);
+}
+button:disabled {
+  cursor: not-allowed;
+}
+.wordmark {
+  font:
+    bold 17px "Courier New",
+    monospace;
+  letter-spacing: 1px;
+}
+.title-copy {
+  top: 23%;
+}
+h1 {
+  font:
+    900 clamp(48px, 8vw, 116px)/0.9 Impact,
+    "Arial Black",
+    sans-serif;
+  letter-spacing: 1px;
+  color: #d8d3ae;
+  text-shadow:
+    3px 3px #18221c,
+    6px 6px #050b08;
+  -webkit-text-stroke: 1px #242b20;
+  margin-bottom: 18px;
+}
+h1 em {
+  color: #b4b999;
+}
+.edition-stamp {
+  display: inline-block;
+  padding: 7px 11px;
+  border: 3px double #bbaa7b;
+  transform: rotate(-3deg);
+  color: #d8cda8;
+  font-weight: bold;
+  font-size: 13px;
+}
+.title-copy p {
+  font:
+    17px/1.6 "Courier New",
+    monospace;
+  color: #dddcc9;
+  margin-top: 24px;
+}
+#begin {
+  border: 4px double #d4cfb5;
+  background: #172017ed;
+  font-size: 17px;
+  width: 330px;
+  box-shadow: 5px 5px #050a07;
+}
+#begin::before {
+  content: "▶";
+  margin-right: 12px;
+}
+.title-copy > small {
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+.title-right {
+  font:
+    bold 16px/1.5 "Courier New",
+    monospace;
+  letter-spacing: 0;
+}
+.title-footer {
+  font-size: 10px;
+  letter-spacing: 0;
+  color: #a7af9b;
+}
+.topline {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.topline button {
+  font-size: 12px;
+  padding: 9px 13px;
+  background: #131d15df;
+  border: 3px double #b8b798;
+}
+#objective {
+  background: #142019d9;
+  border-left: 4px solid #b3b591;
+  padding: 12px 16px;
+}
+#objective > span {
+  font:
+    bold 10px "Courier New",
+    monospace;
+  letter-spacing: 0.8px;
+}
+#objective p {
+  font:
+    14px/1.5 "Courier New",
+    monospace;
+  color: #e2e0c9;
+}
+#party-hud {
+  border: 3px double #acb092;
+  background: #111c15e8;
+  padding: 12px 17px;
+  font-family: "Courier New", monospace;
+}
+#party-hud small {
+  font-size: 10px;
+}
+#interact-label {
+  font:
+    bold 15px "Courier New",
+    monospace;
+  color: #efead4;
+  text-shadow: 1px 2px #000;
+}
+#interact-btn {
+  background: #18241af2;
+  border: 3px double #d0cfaa;
+  font-size: 13px;
+}
+.dialogue-box,
+.choice-box,
+.ending-box {
+  background: #1c281f url("./ui/field-paper.png");
+  background-blend-mode: multiply;
+  border: 6px double #d4d1b7;
+  box-shadow:
+    0 0 0 4px #10170f,
+    9px 10px 0 #0009;
+}
+.dialogue-box {
+  max-width: 1000px;
+  padding: 22px 28px;
+  bottom: 6%;
+}
+#speaker {
+  display: inline-block;
+  background: #d9d3b4;
+  color: #222b1b;
+  padding: 5px 12px;
+  font:
+    bold 13px "Courier New",
+    monospace;
+  letter-spacing: 0.5px;
+}
+#dialogue-text {
+  min-height: 95px;
+  font:
+    19px/1.55 "Courier New",
+    monospace;
+  color: #ece8d1;
+}
+#next {
+  border: 0;
+  font-size: 16px;
+  padding: 6px 10px;
+  color: #e4d4a4;
+}
+#next span {
+  display: inline-block;
+  animation: next-line 1s steps(2, end) infinite;
+}
+@keyframes next-line {
+  50% {
+    transform: translateY(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #next span {
+    animation: none;
+  }
+}
+.choice-box h2,
+.ending-box h2 {
+  font:
+    bold clamp(26px, 4vw, 43px) "Courier New",
+    monospace;
+}
+.choices {
+  gap: 0;
+  border-top: 2px solid #c7c7a4;
+  border-bottom: 2px solid #c7c7a4;
+}
+.choices > button {
+  border: 0;
+  border-right: 1px dashed #c7c7a4;
+  background: transparent;
+}
+.choices > button:last-child {
+  border-right: 0;
+}
+.choices > button:hover {
+  background: #bfc39c22;
+}
+.choices h3 {
+  font:
+    bold 36px "Courier New",
+    monospace;
+}
+.choices p {
+  font:
+    13px/1.5 "Courier New",
+    monospace;
+  color: #dddcc4;
+}
+.choices > button > span,
+.choices small {
+  font-size: 10px;
+  color: #c8c8a9;
+}
+.battle-top {
+  font:
+    bold 12px "Courier New",
+    monospace;
+  letter-spacing: 0.5px;
+}
+.health {
+  background: #ded8b8 url("./ui/field-paper.png");
+  background-blend-mode: multiply;
+  color: #202a1b;
+  border: 5px double #283421;
+  box-shadow: 4px 4px 0 #030a08aa;
+  width: 300px;
+  padding: 12px 17px;
+}
+.health.enemy {
+  left: 6%;
+  right: auto;
+  top: 80px;
+}
+.health.ally {
+  left: auto;
+  right: 6%;
+  bottom: 252px;
+}
+.health strong {
+  font:
+    bold 24px "Courier New",
+    monospace;
+}
+.health span,
+.health small {
+  color: #384630;
+  font:
+    bold 10px "Courier New",
+    monospace;
+}
+.health-track {
+  height: 10px;
+  border: 2px solid #34442a;
+  background: #737b5e;
+  margin: 10px 0 7px;
+}
+.health-track i {
+  background: #4c743c;
+}
+.battle-console {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 10px;
+  max-width: 1240px;
+  min-height: 206px;
+  bottom: 25px;
+}
+.battle-message,
+.battle-menu {
+  background: #16251b url("./ui/field-paper.png");
+  background-blend-mode: multiply;
+  border: 6px double #d7d4b7;
+  box-shadow: 0 0 0 3px #0c160f;
+  padding: 19px 23px;
+}
+.battle-menu {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+#battle-log {
+  font:
+    bold 19px/1.4 "Courier New",
+    monospace;
+  color: #efecd7;
+  min-height: 64px;
+  margin-bottom: 8px;
+}
+#capture-help {
+  font:
+    11px/1.45 "Courier New",
+    monospace;
+  color: #b8c09e;
+  margin: 0;
+}
+#battle-root,
+#move-buttons,
+#battle-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+#battle-root button,
+#move-buttons button,
+#battle-actions button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 13px 8px 13px 25px;
+  position: relative;
+  min-height: 54px;
+}
+#battle-root button {
+  font:
+    bold 23px "Courier New",
+    monospace;
+}
+#battle-root button:hover::before,
+#battle-root button:focus-visible::before,
+#move-buttons button:hover::before,
+#move-buttons button:focus-visible::before,
+#battle-actions button:hover::before,
+#battle-actions button:focus-visible::before {
+  content: "▶";
+  position: absolute;
+  left: 1px;
+  top: 15px;
+  font-size: 15px;
+}
+#move-buttons b {
+  font:
+    bold 18px "Courier New",
+    monospace;
+}
+#move-buttons small {
+  font:
+    10px/1.4 "Courier New",
+    monospace;
+  color: #bec7a4;
+  margin-top: 3px;
+}
+#battle-actions button {
+  font-size: 16px;
+}
+#battle-actions span {
+  display: block;
+  margin: 5px 0 0;
+  font-size: 12px;
+}
+#battle-back {
+  border: 0;
+  padding: 5px 8px;
+  align-self: flex-end;
+  font-size: 12px;
+  margin-top: 4px;
+}
+#battle-continue {
+  font-size: 20px;
+  border: 0;
+}
+.journal-box {
+  --paper: #26301e;
+  --muted: #566047;
+  --accent: #652d24;
+  --line: #454d3577;
+  background: #ded5b5 url("./ui/field-paper.png");
+  background-blend-mode: multiply;
+  color: #26301e;
+  border: 12px solid #283229;
+  border-left-width: 25px;
+  box-shadow:
+    -5px 0 0 #111a13,
+    10px 12px 0 #0008;
+  padding: 28px 32px;
+}
+.journal-box::before {
+  content: "COUNTY LEAGUE / FIELD COPY";
+  display: block;
+  border-bottom: 2px solid #50563b;
+  font:
+    bold 11px "Courier New",
+    monospace;
+  padding-bottom: 9px;
+  margin-bottom: 19px;
+}
+.journal-box > .eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #64392c;
+}
+.journal-box h2 {
+  font:
+    bold 40px "Courier New",
+    monospace;
+  margin: 10px 0;
+  color: #293122;
+}
+.journal-box p,
+.journal-box small {
+  color: #39432e;
+  font-family: "Courier New", monospace;
+}
+.journal-tabs {
+  gap: 0;
+  border-bottom: 3px double #45513b;
+  margin: 20px 0;
+}
+.journal-tabs button {
+  border: 0;
+  padding: 10px 13px;
+  font:
+    bold 12px "Courier New",
+    monospace;
+}
+.journal-tabs .selected {
+  background: #35412d;
+  color: #ede3bd;
+  border-color: transparent;
+}
+.species-grid {
+  display: block;
+}
+.species-entry {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 5px 20px;
+  border: 0;
+  border-bottom: 1px dashed #465239;
+  padding: 18px 0;
+  background: transparent;
+}
+.species-entry.registered {
+  border-left: 0;
+}
+.species-entry small {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  font:
+    bold 12px/1.8 "Courier New",
+    monospace;
+}
+.species-entry.registered small {
+  color: #6b3125;
+}
+.species-entry h3 {
+  grid-column: 2;
+  font:
+    bold 25px "Courier New",
+    monospace;
+  margin: 0;
+}
+.species-entry p {
+  grid-column: 2;
+  font:
+    13px/1.5 "Courier New",
+    monospace;
+  margin: 0;
+  color: #3e4933;
+}
+.register-summary {
+  font-size: 12px;
+  line-height: 1.7;
+  border-bottom: 2px solid #4e5a3f;
+  padding-bottom: 15px;
+}
+.party-row {
+  border: 0;
+  border-bottom: 1px dashed #536144;
+  padding: 16px 0;
+}
+.party-row h3 {
+  font:
+    bold 24px "Courier New",
+    monospace;
+}
+.party-row p {
+  font-size: 12px;
+}
+.party-row button {
+  font-size: 11px;
+  padding: 9px;
+}
+.journal-box input,
+.journal-box select {
+  color: #e1dec4;
+  background: #2c382a;
+}
+.journal-box #map {
+  border: 3px double #45533a;
+}
+@media (max-width: 680px) {
+  .title-copy {
+    top: 22%;
+    left: 7%;
+    right: 7%;
+  }
+  h1 {
+    font-size: clamp(40px, 12vw, 70px);
+  }
+  .title-copy p {
+    font-size: 14px;
+  }
+  #begin {
+    width: 100%;
+    max-width: 330px;
+    font-size: 14px;
+  }
+  .edition-stamp {
+    font-size: 11px;
+  }
+  .title-footer {
+    font-size: 8px;
+  }
+  .topline {
+    font-size: 9px;
+    gap: 8px;
+  }
+  .topline button {
+    font-size: 10px;
+  }
+  #objective {
+    max-width: 230px;
+    padding: 8px 12px;
+  }
+  #objective p {
+    font-size: 12px;
+  }
+  #party-hud {
+    padding: 8px 12px;
+  }
+  .dialogue-box {
+    padding: 15px;
+    width: 92%;
+  }
+  #dialogue-text {
+    min-height: 158px;
+    font-size: 15px;
+  }
+  .choice-box {
+    padding: 17px;
+  }
+  .choices h3 {
+    font-size: 22px;
+  }
+  .choices > button {
+    padding: 12px 8px;
+    min-height: 180px;
+  }
+  .choices p {
+    font-size: 11px;
+  }
+  .choices small,
+  .choices > button > span {
+    font-size: 8px;
+  }
+  .health {
+    width: 230px;
+    padding: 9px 12px;
+  }
+  .health strong {
+    font-size: 20px;
+  }
+  .health.enemy {
+    top: 55px;
+    left: 4%;
+  }
+  .health.ally {
+    bottom: 288px;
+    right: 4%;
+  }
+  .battle-console {
+    left: 4%;
+    right: 4%;
+    bottom: 15px;
+    grid-template-columns: 1fr;
+    gap: 5px;
+    min-height: 0;
+  }
+  .battle-message {
+    padding: 10px 14px;
+  }
+  #battle-log {
+    font-size: 14px;
+    min-height: 34px;
+  }
+  #capture-help {
+    font-size: 9px;
+  }
+  .battle-menu {
+    padding: 4px 10px;
+    min-height: 108px;
+  }
+  #battle-root button {
+    font-size: 19px;
+    padding: 10px 8px 10px 23px;
+    min-height: 43px;
+  }
+  #move-buttons button,
+  #battle-actions button {
+    min-height: 42px;
+    padding: 6px 6px 6px 22px;
+  }
+  #move-buttons b {
+    font-size: 14px;
+  }
+  #move-buttons small {
+    font-size: 8px;
+  }
+  #battle-actions button {
+    font-size: 14px;
+  }
+  .journal-box {
+    padding: 18px 15px;
+    border-width: 7px;
+    border-left-width: 12px;
+  }
+  .journal-box h2 {
+    font-size: 30px;
+  }
+  .journal-tabs button {
+    font-size: 10px;
+    padding: 9px 8px;
+  }
+  .species-entry {
+    grid-template-columns: 79px 1fr;
+    gap: 6px 12px;
+  }
+  .species-entry small {
+    font-size: 10px;
+  }
+  .species-entry h3 {
+    font-size: 23px;
+  }
+  .species-entry p {
+    font-size: 12px;
+  }
+}

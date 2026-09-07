@@ -27,6 +27,7 @@ import {
   retrieveAnimal,
 } from "./rules.js";
 import "./style.css";
+import "./game-ui.css";
 import { assembleWorld } from "./world.js";
 import { FIELD_NOTES, WILD_SITES } from "./field-notes.js";
 const $ = (id) => document.getElementById(id),
@@ -352,15 +353,41 @@ function close() {
   partySelection = false;
 }
 function speak(speaker, lines, callback) {
+  if (dialogueTimer !== null) {
+    clearInterval(dialogueTimer);
+    dialogueTimer = null;
+  }
   dialogueLines = [...lines];
   dialogueCallback = callback;
   $("speaker").textContent = speaker;
   open("dialogue");
   advanceDialogue();
 }
+let dialogueTimer = null,
+  dialogueFullText = "";
 function advanceDialogue() {
+  if (dialogueTimer !== null) {
+    clearInterval(dialogueTimer);
+    dialogueTimer = null;
+    $("dialogue-text").textContent = dialogueFullText;
+    return;
+  }
   if (dialogueLines.length) {
-    $("dialogue-text").textContent = dialogueLines.shift();
+    dialogueFullText = dialogueLines.shift();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches)
+      $("dialogue-text").textContent = dialogueFullText;
+    else {
+      let characters = 1;
+      $("dialogue-text").textContent = dialogueFullText.slice(0, characters);
+      dialogueTimer = setInterval(() => {
+        characters += 2;
+        $("dialogue-text").textContent = dialogueFullText.slice(0, characters);
+        if (characters >= dialogueFullText.length) {
+          clearInterval(dialogueTimer);
+          dialogueTimer = null;
+        }
+      }, 25);
+    }
   } else {
     close();
     const cb = dialogueCallback;
@@ -532,6 +559,7 @@ function startBattle(config) {
     busy: false,
     turn: 1,
     finished: false,
+    menu: "root",
   };
   // Keep the battle at the child's eye height. Choose clear ground in front or to either side.
   let forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
@@ -607,6 +635,7 @@ function startBattle(config) {
       : `${config.name} sends out ${battle.enemy.nickname}.`;
   renderBattle();
   sound("encounter");
+  $("fight-btn").focus();
 }
 function faceBattleAnimals() {
   battle.left.root.lookAt(
@@ -643,6 +672,12 @@ function renderBattle() {
   $("battle-round").textContent = `TURN ${battle.turn}`;
   $("carrier-count").textContent = state.carriers;
   $("medkit-count").textContent = state.medkits;
+  $("battle-root").hidden = battle.finished || battle.menu !== "root";
+  $("move-buttons").hidden = battle.finished || battle.menu !== "fight";
+  $("battle-actions").hidden = battle.finished || battle.menu !== "bag";
+  $("battle-back").hidden = battle.finished || battle.menu === "root";
+  for (const id of ["fight-btn", "bag-btn", "battle-back"])
+    $(id).disabled = battle.busy || battle.finished;
   $("capture-help").hidden = battle.finished;
   $("capture-help").textContent =
     battle.config.kind === "wild"
@@ -665,8 +700,89 @@ function renderBattle() {
     state.carriers < 1 ||
     (state.party.length >= 6 && state.reserve.length >= RESERVE_LIMIT);
   $("heal-btn").disabled ||= state.medkits < 1;
+  for (const [id, animal] of [
+    ["enemy-hp", e],
+    ["ally-hp", p],
+  ])
+    $(id).style.background =
+      animal.hp / animal.maxHp < 0.2
+        ? "#9d4634"
+        : animal.hp / animal.maxHp < 0.5
+          ? "#b18b3f"
+          : "#4c743c";
+  if (
+    !battle.busy &&
+    !battle.finished &&
+    document.activeElement === document.body
+  ) {
+    const panel = $(
+      battle.menu === "root"
+        ? "battle-root"
+        : battle.menu === "fight"
+          ? "move-buttons"
+          : "battle-actions",
+    );
+    panel.querySelector("button:not([disabled])")?.focus();
+  }
 }
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+for (const [id, menu] of [
+  ["fight-btn", "fight"],
+  ["bag-btn", "bag"],
+  ["battle-back", "root"],
+]) {
+  $(id).onclick = () => {
+    if (!battle || battle.busy || battle.finished) return;
+    battle.menu = menu;
+    renderBattle();
+    if (menu === "root") $("fight-btn").focus();
+    else
+      $(menu === "fight" ? "move-buttons" : "battle-actions")
+        .querySelector("button:not([disabled])")
+        ?.focus();
+  };
+}
+$("battle").addEventListener("keydown", (event) => {
+  if (
+    event.key === "Escape" &&
+    battle &&
+    !battle.busy &&
+    !battle.finished &&
+    battle.menu !== "root"
+  ) {
+    $("battle-back").click();
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  if (
+    !battle ||
+    battle.busy ||
+    !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
+  )
+    return;
+  const panel = $(
+    battle.menu === "root"
+      ? "battle-root"
+      : battle.menu === "fight"
+        ? "move-buttons"
+        : "battle-actions",
+  );
+  const buttons = [...panel.querySelectorAll("button:not([disabled])")];
+  if (!buttons.length || !buttons.includes(document.activeElement)) return;
+  const step =
+    event.key === "ArrowUp"
+      ? -2
+      : event.key === "ArrowDown"
+        ? 2
+        : event.key === "ArrowLeft"
+          ? -1
+          : 1;
+  const index = buttons.indexOf(document.activeElement);
+  buttons[(index + step + buttons.length) % buttons.length].focus();
+  event.preventDefault();
+  event.stopPropagation();
+});
 async function perform(isPlayer, move) {
   if (!battle) return;
   const p = state.party[battle.active],

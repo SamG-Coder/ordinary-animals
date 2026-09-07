@@ -20,7 +20,8 @@
       </div>
       <div class="title-copy">
         <div class="eyebrow">WICKMERE COUNTY / 05:17 AM</div>
-        <h1>GROW UP.<br /><em>THEY SAID.</em></h1>
+        <h1>ORDINARY<br /><em>ANIMALS</em></h1>
+        <div class="edition-stamp">NO SUPERVISION EDITION</div>
         <p>
           You’re ten years old.<br />There’s a letter on your desk.<br />Apparently,
           that makes this legal.
@@ -33,7 +34,7 @@
         NO MAGIC.<br />NO SUPERVISION.<br />JUST ANIMALS.
       </div>
       <div class="title-footer">
-        <span>BLENDER-AUTHORED WORLD & ANIMATION</span
+        <span>WICKMERE COUNTY LEAGUE · AGE REQUIREMENT: TEN</span
         ><span>HEADPHONES RECOMMENDED · DESKTOP RECOMMENDED</span>
       </div>
     </section>
@@ -43,7 +44,7 @@
         ><button id="menu-btn">JOURNAL <kbd>J</kbd></button>
       </div>
       <div id="objective">
-        <span>CURRENT OBJECTIVE</span>
+        <span>GARY’S INSTRUCTIONS</span>
         <p id="objective-text">Read the letter on your desk.</p>
       </div>
       <div id="crosshair"></div>
@@ -78,7 +79,7 @@
       <div class="dialogue-box">
         <div class="eyebrow" id="speaker">A LETTER FROM HOME</div>
         <p id="dialogue-text"></p>
-        <button id="next">CONTINUE <span>→</span></button>
+        <button id="next">NEXT <span>▼</span></button>
       </div>
     </section>
     <section id="choose" class="overlay" hidden>
@@ -126,24 +127,35 @@
         <small id="ally-status"></small>
       </div>
       <div class="battle-console">
-        <div id="battle-log" role="status"></div>
-        <p id="capture-help"></p>
-        <div id="move-buttons"></div>
-        <div id="battle-actions">
-          <button id="capture-btn">
-            THROW CARRIER <span id="carrier-count"></span></button
-          ><button id="heal-btn">MEDKIT <span id="medkit-count"></span></button
-          ><button id="switch-btn">SWITCH ANIMAL</button
-          ><button id="run-btn">RUN</button>
+        <div class="battle-message">
+          <div id="battle-log" role="status"></div>
+          <p id="capture-help"></p>
         </div>
-        <button id="battle-continue" hidden>CONTINUE →</button>
+        <div class="battle-menu">
+          <div id="battle-root">
+            <button id="fight-btn">FIGHT</button
+            ><button id="bag-btn">BAG</button>
+            <button id="switch-btn">ANIMALS</button
+            ><button id="run-btn">RUN</button>
+          </div>
+          <div id="move-buttons"></div>
+          <div id="battle-actions">
+            <button id="capture-btn">
+              THROW CARRIER <span id="carrier-count"></span></button
+            ><button id="heal-btn">
+              MEDKIT <span id="medkit-count"></span>
+            </button>
+          </div>
+          <button id="battle-back" hidden>← BACK</button>
+          <button id="battle-continue" hidden>CONTINUE →</button>
+        </div>
       </div>
     </section>
     <section id="journal" class="overlay" hidden>
       <div class="journal-box">
         <button class="close" id="close-journal">×</button>
         <div class="eyebrow">PROPERTY OF A TEN-YEAR-OLD</div>
-        <h2>Field journal.</h2>
+        <h2>FIELD NOTES</h2>
         <div class="journal-tabs">
           <button data-tab="map">REGION MAP</button
           ><button data-tab="party">YOUR ANIMALS</button

@@ -10,7 +10,7 @@ A dark first-person animal-battling parody. You are ten years old. A man with a 
 
 Wake up in your bedroom in Wickmere. Read your mother's letter, leave through the hallway, and meet Gary at the county research office. Choose a cat, dog, or hamster, battle your neighbour, capture wild animals, and challenge eight district leaders before the four-round county championship.
 
-Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals. Further captures go to clinic storage (120 spaces), so collecting can continue with a full party. The field journal records seen and registered species, and all eight species have wild encounter sites. Transfer animals at home or near Gary’s clinic; at least one conscious companion must stay with you.
+Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Battles use a boxed Fight / Bag / Animals / Run menu with arrow-key selection. Dialogue types onto the page and can be revealed immediately with Next. The journal is presented as a county field notebook. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals. Further captures go to clinic storage (120 spaces), so collecting can continue with a full party. The field journal records seen and registered species, and all eight species have wild encounter sites. Transfer animals at home or near Gary’s clinic; at least one conscious companion must stay with you.
 
 Campaign progress saves in this browser. Defeat returns you to your room with a healed party. Your bedroom and Gary offer free recovery. Earned district offices unlock travel through the journal map.
 
@@ -42,7 +42,7 @@ Graphics, brightness, sensitivity, and camera movement are adjustable and saved 
 
 ## Blender asset pipeline
 
-The active build contains **79 individual GLB assets plus a Blender-rendered HDR sky**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
+The active build contains **79 individual GLB assets plus a Blender-rendered HDR sky and a Blender-authored interface paper texture**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
 
 - `assets/`: separate `.blend` sources with packed images. Open a single tree, chair, door, animal, road segment, or building and edit it directly.
 - `game-assets/asset-catalog.json`: the source/export mapping and local collision dimensions.
@@ -50,6 +50,7 @@ The active build contains **79 individual GLB assets plus a Blender-rendered HDR
 - `src/world.js`: placement and spatial batching of the exported modules. It does not generate world mesh primitives.
 - `src/main.js`: first-person input, lighting, animation playback, encounters, battle presentation, UI, audio, and saves.
 - `src/rules.js`: combat, progression definitions, and save validation.
+- `assets/field-paper.blend`: editable stationery material; `scripts/author_interface_paper.py` exports the packed texture used by the game interface.
 
 To export **one edited asset** with Blender on your PATH:
 
@@ -86,6 +87,7 @@ node scripts/opening-playtest.mjs --route-one
 node scripts/campaign-scenarios.mjs
 node scripts/animal-visual-check.mjs
 node scripts/interface-check.mjs
+node scripts/battle-interface-check.mjs
 npm run build
 ```
 

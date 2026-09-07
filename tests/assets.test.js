@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const catalog = JSON.parse(fs.readFileSync("game-assets/asset-catalog.json"));
+test("the interface paper has an editable Blender source and exported texture", () => {
+  assert.ok(fs.existsSync("assets/field-paper.blend"));
+  assert.ok(fs.existsSync("src/ui/field-paper.png"));
+});
 test("every catalog entry has a separate Blender source and GLB export", () => {
   assert.ok(Object.keys(catalog).length >= 50);
   for (const [name, a] of Object.entries(catalog)) {

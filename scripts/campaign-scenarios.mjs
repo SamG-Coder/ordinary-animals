@@ -1,3 +1,4 @@
+import { battleMenu } from "./battle-controls.mjs";
 // Browser regression scenarios use explicit save fixtures. These are not a fresh-save playthrough.
 import { chromium, expect } from "@playwright/test";
 import { initialSave, makeAnimal, SAVE_KEY } from "../src/rules.js";
@@ -69,6 +70,7 @@ async function finishBattle(page, button = 0) {
         Boolean(document.querySelector("#move-buttons button:not([disabled])")),
     );
     if (await page.locator("#battle-continue").isVisible()) return;
+    await battleMenu(page, "fight");
     await page.locator("#move-buttons button").nth(button).click();
     await page.waitForTimeout(100);
   }
@@ -81,7 +83,9 @@ try {
     pitch: -0.4,
   });
   await interact(page, -17, 19, 0.5, "wild0");
+  await battleMenu(page, "fight");
   await page.locator("#move-buttons button").first().click();
+  await battleMenu(page, "bag");
   await page.locator("#capture-btn:not([disabled])").waitFor();
   await page.click("#capture-btn");
   await page.locator("#battle-continue").waitFor();
@@ -111,7 +115,9 @@ try {
   });
   await interact(page, -17, 19, 0.5, "wild0");
   await expect(page.locator("#capture-help")).toContainText("clinic storage");
+  await battleMenu(page, "fight");
   await page.locator("#move-buttons button").first().click();
+  await battleMenu(page, "bag");
   await page.locator("#capture-btn:not([disabled])").waitFor();
   await page.click("#capture-btn");
   await page.locator("#battle-continue").waitFor();

@@ -1,3 +1,4 @@
+import { battleMenu } from "./battle-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
@@ -105,6 +106,7 @@ try {
         Boolean(document.querySelector("#move-buttons button:not([disabled])")),
     );
     if (await page.locator("#battle-continue").isVisible()) break;
+    await battleMenu(page, "fight");
     await page.locator("#move-buttons button").first().click();
     await page.waitForTimeout(100);
   }
@@ -154,10 +156,12 @@ try {
       if (
         Number(hp[1]) < Number(hp[2]) * 0.5 &&
         (await page.locator("#heal-btn").isEnabled())
-      )
+      ) {
+        await battleMenu(page, "bag");
         await page.click("#heal-btn");
-      else {
+      } else {
         const enemy = await page.locator("#enemy-name").textContent();
+        await battleMenu(page, "fight");
         await page
           .locator("#move-buttons button")
           .nth(enemy === "Rat" ? 0 : 1)
