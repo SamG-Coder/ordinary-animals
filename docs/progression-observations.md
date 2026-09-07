@@ -1,8 +1,25 @@
 # Progression observations — 8 September 2026
 
-These are bounded balance diagnostics for the next iteration. **They are not a campaign playthrough, optimal-play proof or a demonstrated progression hardlock.** No balance values changed during this audit.
+These are bounded balance diagnostics. **They are not a campaign playthrough, optimal-play proof or a demonstrated progression hardlock.** The original observations below preceded an opponent-equipment correction; its scope and damage comparison are recorded here.
 
-## Remaining opponent-loadout issue
+## Adult trainer equipment correction
+
+`makeBattleOpponent` now replaces one unused support slot for gym/league opponents at levels 18–27: dog Howl becomes Body Check; fox Howl becomes Bite; goat Howl becomes Body Check; raccoon Dig In becomes Scratch. Both the first opponent and later roster members use the same factory. Other levels, early encounters, wild capture equipment, player move selections, stats and AI probabilities retain their previous behavior. The level-28 veteran attacks still use the normal loadout.
+
+The correction addresses the original issue described below. Raccoon also lost its feline attack at these levels and is included. Support-move AI remains a separate improvement.
+
+A paired comparison used 1,000 seeds per matchup, a fresh level-21 opponent and a full-health level-23 defender, the actual `attack()` rules and uniform selection among powered equipped moves. Values are mean outgoing HP damage for one action, before → after:
+
+| Opponent | Against Cat | Against Dog | Against Hamster |
+|---|---:|---:|---:|
+| Dog | 53.08 → 52.96 | 39.96 → 39.89 | 32.43 → 32.37 |
+| Fox | 37.09 → 45.79 | 29.15 → 35.10 | 47.94 → 40.66 |
+| Goat | 30.60 → 42.91 | 48.76 → 45.38 | 37.99 → 36.01 |
+| Raccoon | 35.84 → 37.04 | 37.16 → 35.13 | 29.62 → 36.63 |
+
+These show matchup tradeoffs: the largest increase is Goat against Cat, approximately 40%. They exclude follow-up status effects, healing, complete encounters and earned campaign resources. Late-game difficulty therefore still needs full battle and campaign verification. Regression tests cover the exact equipment, every unaffected species/level/encounter combination, unchanged HP/stats and actual execution of the restored moves.
+
+## Original opponent-loadout issue
 
 [`makeAnimal`](../src/rules.js) equips the last four learned moves. The runtime creates opponents with this default, while a player's existing chosen loadout is preserved when levels are gained. At level 18, this gives some late opponents a weak or misleading attack selection:
 
@@ -14,7 +31,7 @@ These are bounded balance diagnostics for the next iteration. **They are not a c
 
 [`enemyMove`](../src/main.js) chooses among powered moves; its only non-damaging exception is a limited Emergency Rations roll at low HP. The new support moves therefore replace attacks without being used by the AI. Championship opponents at levels 20–23 do not reach the replacement attacks learned at level 28.
 
-Review authored opponent loadouts before increasing stats. Giving a late goat its normal canine attack and an intentional support choice would preserve its combat identity. Any change to AI use of support moves needs a new seeded comparison; no such rebalance has been applied yet.
+The equipment correction restores these attack options without increasing stats. Any future change to AI use of support moves needs a new seeded comparison; support-move behavior has not changed.
 
 ## Preparation estimates
 

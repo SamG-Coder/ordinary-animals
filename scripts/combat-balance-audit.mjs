@@ -16,6 +16,7 @@ import {
   unlockedMoves,
 } from "../src/rules.js";
 import { WILD_SITES } from "../src/field-notes.js";
+import { makeBattleOpponent } from "../src/opponent-loadouts.js";
 
 const runs = Number(
   process.argv.find((a) => a.startsWith("--runs="))?.slice(7) ?? 10000,
@@ -65,7 +66,7 @@ function resolve(b) {
       b.result = "win";
       return;
     }
-    b.enemy = makeAnimal(b.config.roster[b.enemyIndex], b.config.level);
+    b.enemy = makeBattleOpponent(b.config, b.enemyIndex);
   }
   if (b.state.party[b.active].hp <= 0) {
     const next = b.state.party.findIndex((a) => a.hp > 0);
@@ -124,7 +125,7 @@ function encounter(state, config, policy, rng) {
     rng,
     active: state.party.findIndex((a) => a.hp > 0),
     enemyIndex: 0,
-    enemy: makeAnimal(config.roster[0], config.level),
+    enemy: makeBattleOpponent(config),
     turns: 0,
     switches: 0,
     result: null,

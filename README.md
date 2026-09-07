@@ -18,6 +18,8 @@ Mum's old phone contains Messages, Bag, Maps, Animals, the species Register, the
 
 Combat is turn based, with moves, levelling, type advantages, status effects, switching, healing and capture. Weaken conscious wild animals before throwing a carrier. A party holds six animals; further captures go to clinic storage. All eight species have wild encounter sites. Companions follow your walked route, while wild animals wander nearby.
 
+Adult trainer loadouts retain their class attacks through levels 18–27 instead of forgetting them for unused support moves. This changes some late matchups; [the damage comparison](docs/progression-observations.md) records the effect and the remaining campaign-balance limits.
+
 Bag lets you select an injured animal for treatment between encounters. Each medkit restores up to 60% of maximum HP; it cannot revive a fainted animal or clear a status effect. Full-health treatment spends nothing. Battle health panels retain attack/defence modifiers, which reset when an animal switches out or the encounter ends.
 
 Mercy General Stores has a walkable interior and an unattended supply counter. Collect carriers and medkits there at lower prices than phone delivery. Home and the clinic provide free recovery. Maps unlocks travel to earned district destinations, and home/clinic bus travel after the first badge. Defeat returns you home with a treated party. Eight badges lead to a four-round county championship and an ending.
@@ -88,7 +90,7 @@ Repeat hash generation after any GLB re-export or catalog change, and include th
 
 ## Verification and development status
 
-This is an active development build. The latest completed checks are **157 passing unit/geometry tests**, a **successful 167-asset Blender source audit**, **59 passing no-input integration assertions**, and a **successful production build**. The image-hash manifest has been regenerated for the final exports. The integration run includes a finite-supply rival victory, a real Bag treatment restoring 31 HP for one medkit, save/load, phone navigation, visible battle modifiers, and rejected actions during pending or completed battles. Earlier county views remain documented in [the rebuild verification record](docs/rebuild-verification.md).
+This is an active development build. The latest completed checks are **160 passing unit/geometry tests**, a **successful 167-asset Blender source audit**, **59 passing no-input integration assertions**, and a **successful production build**. The image-hash manifest has been regenerated for the final exports. The integration run includes a finite-supply rival victory, a real Bag treatment restoring 33 HP for one medkit, save/load, phone navigation, visible battle modifiers, and rejected actions during pending or completed battles. Earlier county views remain documented in [the rebuild verification record](docs/rebuild-verification.md).
 
 The latest update adds the **3** phone shortcut, field treatment, battle-state safeguards and shader preparation for the actual render passes. The cat has revised Blender anatomy and packed tabby materials; all eight exported Faint animations have sampled floor-contact checks. A small pale patch remains on the cat's upper foreleg, and the animals remain stylized. The final hamster, rat and rabbit whisker-fold corrections passed source/export contact tests but were not visually re-rendered before this release.
 

@@ -48,6 +48,7 @@ import { HOME_CLINIC_RIVAL } from "./home-clinic.js";
 import { getBattleAdvice } from "./battle-advice.js";
 import { createHeldPhone } from "./held-phone.js";
 import { prepareWorldShaders } from "./shader-preparation.js";
+import { makeBattleOpponent } from "./opponent-loadouts.js";
 import {
   createAssetTexturePool,
   createTextureUploadQueue,
@@ -780,7 +781,7 @@ function startBattle(config) {
     config,
     active,
     enemyIndex: 0,
-    enemy: makeAnimal(config.roster[0], config.level),
+    enemy: makeBattleOpponent(config),
     busy: false,
     turn: 1,
     finished: false,
@@ -1072,10 +1073,7 @@ async function resolveRound() {
     battle.enemyIndex++;
     if (battle.enemyIndex < battle.config.roster.length) {
       removeActor(battle.right);
-      battle.enemy = makeAnimal(
-        battle.config.roster[battle.enemyIndex],
-        battle.config.level,
-      );
+      battle.enemy = makeBattleOpponent(battle.config, battle.enemyIndex);
       battle.right = actor(
         battle.enemy.species,
         battle.rightPosition.x,
