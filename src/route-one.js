@@ -19,6 +19,30 @@ export function buildRouteOne({ place, lamp }) {
       x = dx * t,
       z = 20 + dz * t;
     for (const side of [-1, 1]) {
+      const grassX = x + nx * side * 6.1,
+        grassZ = z + nz * side * 6.1;
+      // Keep the shelter approach and marked crossing clear.
+      if (
+        Math.hypot(grassX + 71, grassZ - 67) > 3 &&
+        !(Math.abs(grassX + 93) < 3.2 && grassZ > 52 && grassZ < 82) &&
+        !openEncounter(grassX, grassZ)
+      )
+        place(
+          "verge-grass-2m",
+          grassX,
+          grassZ,
+          0,
+          roadAngle + Math.PI / 2,
+          0.9 + (i % 3) * 0.08,
+          false,
+        );
+      place(
+        "roadside-gravel-2m",
+        x + nx * side * 4.65,
+        z + nz * side * 4.65,
+        0,
+        roadAngle + Math.PI / 2,
+      );
       const bx = x + nx * side * 9.5,
         bz = z + nz * side * 9.5;
       if (!openEncounter(bx, bz))
@@ -65,4 +89,6 @@ export function buildRouteOne({ place, lamp }) {
   ])
     place("oak-tree", x, z, 0, x * 0.04, s, false);
   lamp(-89, 59, Math.PI);
+  for (const x of [-104, -101, -85, -82])
+    place("verge-grass-2m", x, 58.5, 0, x * 0.7, 1.1, false);
 }

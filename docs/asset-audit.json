@@ -1,5 +1,5 @@
 {
-  "assetCount": 79,
+  "assetCount": 81,
   "assets": [
     {
       "asset": "bed",
@@ -358,7 +358,7 @@
       "source": "assets/ground-tile-40m.blend",
       "model": "models/ground-tile-40m.glb",
       "editableObjects": 1,
-      "packedImages": 2,
+      "packedImages": 3,
       "armatures": 0
     },
     {
@@ -366,7 +366,7 @@
       "source": "assets/ground-mound-40m.blend",
       "model": "models/ground-mound-40m.glb",
       "editableObjects": 1,
-      "packedImages": 2,
+      "packedImages": 3,
       "armatures": 0
     },
     {
@@ -405,7 +405,7 @@
       "asset": "grass-clump",
       "source": "assets/grass-clump.blend",
       "model": "models/grass-clump.glb",
-      "editableObjects": 23,
+      "editableObjects": 1,
       "packedImages": 0,
       "armatures": 0
     },
@@ -566,7 +566,7 @@
       "source": "assets/stone-wall-4m.blend",
       "model": "models/stone-wall-4m.glb",
       "editableObjects": 45,
-      "packedImages": 0,
+      "packedImages": 2,
       "armatures": 0
     },
     {
@@ -630,6 +630,22 @@
       "source": "assets/crossing-guard.blend",
       "model": "models/crossing-guard.glb",
       "editableObjects": 49,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "verge-grass-2m",
+      "source": "assets/verge-grass-2m.blend",
+      "model": "models/verge-grass-2m.glb",
+      "editableObjects": 1,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "roadside-gravel-2m",
+      "source": "assets/roadside-gravel-2m.blend",
+      "model": "models/roadside-gravel-2m.glb",
+      "editableObjects": 100,
       "packedImages": 0,
       "armatures": 0
     }

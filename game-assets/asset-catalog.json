@@ -460,5 +460,13 @@
   "crossing-guard": {
     "model": "models/crossing-guard.glb",
     "source": "assets/crossing-guard.blend"
+  },
+  "verge-grass-2m": {
+    "source": "assets/verge-grass-2m.blend",
+    "model": "models/verge-grass-2m.glb"
+  },
+  "roadside-gravel-2m": {
+    "source": "assets/roadside-gravel-2m.blend",
+    "model": "models/roadside-gravel-2m.glb"
   }
 }

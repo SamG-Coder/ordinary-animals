@@ -2027,7 +2027,13 @@ async function load() {
         Math.round((loaded / names.length) * 100) + "%";
     }),
   );
-  for (const a of Object.values(assets)) setupMesh(a.scene);
+  for (const [name, a] of Object.entries(assets)) {
+    setupMesh(a.scene);
+    if (name === "verge-grass-2m")
+      a.scene.traverse((o) => {
+        if (o.isMesh) o.castShadow = false;
+      });
+  }
   modularWorld = assembleWorld(scene, assets, catalog, layout);
   worldInfo = modularWorld.info;
   region = modularWorld.root;
