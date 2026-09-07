@@ -1,4 +1,17 @@
 // Interface chrome only. The world and all image/model assets remain Blender authored.
+export function phoneFocusables(root) {
+  return [...root.querySelectorAll("button, input, select, textarea, a[href], [tabindex]")]
+    .filter((node) => !node.disabled && node.tabIndex >= 0 &&
+      !node.closest("[hidden], [inert]") && node.getClientRects().length > 0);
+}
+export function phoneFocusWrap(root, active, backwards = false) {
+  const nodes = phoneFocusables(root);
+  if (!nodes.length) return null;
+  if (!nodes.includes(active)) return backwards ? nodes.at(-1) : nodes[0];
+  if (backwards && active === nodes[0]) return nodes.at(-1);
+  if (!backwards && active === nodes.at(-1)) return nodes[0];
+  return null;
+}
 export function mountPhone() {
   const device = document.createElement("aside");
   device.id = "phone";

@@ -170,7 +170,7 @@ export const MOVES = {
     power: 0,
     effect: "guard",
     type: "rodent",
-    desc: "Raises defence until this battle ends. Uses a turn.",
+    desc: "Raises defence until switched out or this battle ends. Uses a turn.",
   },
   rake: {
     name: "Raking Claws",
@@ -414,6 +414,40 @@ export function makeAnimal(species, level = 5, nickname) {
 export function restore(a) {
   return { ...a, hp: a.maxHp, status: null, attackStage: 0, defenseStage: 0 };
 }
+export function clearBattleStages(animal) {
+  return { ...animal, attackStage: 0, defenseStage: 0 };
+}
+export function canSelectPartyAnimal(party, index, battle = null) {
+  return Number.isInteger(index) && index >= 0 && party[index]?.hp > 0 &&
+    index !== (battle ? battle.active : 0) &&
+    (!battle || (!battle.busy && !battle.finished));
+}
+export function medkitRecovery(animal) {
+  if (
+    !animal || !Number.isFinite(animal.hp) || !Number.isFinite(animal.maxHp) ||
+    animal.hp <= 0 || animal.hp >= animal.maxHp
+  ) return 0;
+  return Math.min(animal.maxHp - animal.hp, Math.ceil(animal.maxHp * 0.6));
+}
+export function useMedkit(state, index) {
+  if (
+    !state.bagTaken || !Number.isInteger(state.medkits) || state.medkits < 1 ||
+    !Number.isInteger(index) || index < 0 || index >= state.party.length
+  ) return 0;
+  const animal = state.party[index], recovered = medkitRecovery(animal);
+  if (!recovered) return 0;
+  animal.hp += recovered;
+  state.medkits--;
+  return recovered;
+}
+export function battleStatusText(animal) {
+  const parts = [`${animal.hp}/${animal.maxHp} HP`];
+  if (animal.status) parts.push(animal.status.toUpperCase());
+  for (const [label, stage] of [["ATK", animal.attackStage], ["DEF", animal.defenseStage]]) {
+    if (stage) parts.push(`${label} ${stage > 0 ? "+" : "−"}${Math.abs(stage)}`);
+  }
+  return parts.join(" · ");
+}
 export function gainLevels(animal, amount = 1) {
   const level = Math.max(
     1,
@@ -500,16 +534,25 @@ export function attack(attacker, defender, move, rng = Math.random) {
   if (hit.effectiveness > 1)
     message += " Super effective. Biology is a problem.";
   if (m.effect === "weaken") {
-    d.attackStage = Math.max(-2, d.attackStage - 1);
-    message += " Enemy attack fell.";
+    if (d.attackStage <= -2) message += " Enemy attack is already at its minimum.";
+    else {
+      d.attackStage = Math.max(-2, (d.attackStage ?? 0) - 1);
+      message += " Enemy attack fell.";
+    }
   }
   if (m.effect === "boost") {
-    a.attackStage = Math.min(2, a.attackStage + 1);
-    message += " Attack rose.";
+    if (a.attackStage >= 2) message += " Attack is already at its maximum.";
+    else {
+      a.attackStage = Math.min(2, (a.attackStage ?? 0) + 1);
+      message += " Attack rose.";
+    }
   }
   if (m.effect === "guard") {
-    a.defenseStage = Math.min(2, (a.defenseStage ?? 0) + 1);
-    message += " Defence rose.";
+    if (a.defenseStage >= 2) message += " Defence is already at its maximum.";
+    else {
+      a.defenseStage = Math.min(2, (a.defenseStage ?? 0) + 1);
+      message += " Defence rose.";
+    }
   }
   if (m.effect === "heal") {
     const heal = Math.min(a.maxHp - a.hp, Math.round(a.maxHp * 0.24));

@@ -18,6 +18,8 @@ Mum's old phone contains Messages, Bag, Maps, Animals, the species Register, the
 
 Combat is turn based, with moves, levelling, type advantages, status effects, switching, healing and capture. Weaken conscious wild animals before throwing a carrier. A party holds six animals; further captures go to clinic storage. All eight species have wild encounter sites. Companions follow your walked route, while wild animals wander nearby.
 
+Bag lets you select an injured animal for treatment between encounters. Each medkit restores up to 60% of maximum HP; it cannot revive a fainted animal or clear a status effect. Full-health treatment spends nothing. Battle health panels retain attack/defence modifiers, which reset when an animal switches out or the encounter ends.
+
 Mercy General Stores has a walkable interior and an unattended supply counter. Collect carriers and medkits there at lower prices than phone delivery. Home and the clinic provide free recovery. Maps unlocks travel to earned district destinations, and home/clinic bus travel after the first badge. Defeat returns you home with a treated party. Eight badges lead to a four-round county championship and an ending.
 
 ## The county
@@ -46,7 +48,8 @@ Connecting roads use modular surfaces, subtle paint, asphalt repairs, shallow sc
 | Release mouse look | Escape                                     |
 | Interact           | E                                          |
 | Torch              | F                                          |
-| Open phone apps    | J                                          |
+| Open phone apps    | 3 or J while exploring                     |
+| Battle moves       | 1–4 during your turn                       |
 | Switch phone apps  | Phone Home and Back buttons                |
 
 Brightness, graphics quality, sensitivity and camera movement preferences save separately from the campaign. Touch controls are included; desktop remains the intended experience.
@@ -85,11 +88,13 @@ Repeat hash generation after any GLB re-export or catalog change, and include th
 
 ## Verification and development status
 
-This is an active development build. The latest completed checks are **121 passing unit/geometry tests**, a **successful final 167-asset Blender source audit**, **41 passing final no-input integration assertions**, a **successful production build**, and **21 semantic world views plus nine repeat views after interior-lighting corrections**. The image-hash manifest has been regenerated for the final exports, and the final battle screenshot confirms that the phone, HP panels and commands fit. Six final focused world views passed capture validation after the leader-lighting, lodge-fascia and puddle changes. See [the rebuild verification record](docs/rebuild-verification.md) for evidence and remaining limitations.
+This is an active development build. The latest completed checks are **157 passing unit/geometry tests**, a **successful 167-asset Blender source audit**, **59 passing no-input integration assertions**, and a **successful production build**. The image-hash manifest has been regenerated for the final exports. The integration run includes a finite-supply rival victory, a real Bag treatment restoring 31 HP for one medkit, save/load, phone navigation, visible battle modifiers, and rejected actions during pending or completed battles. Earlier county views remain documented in [the rebuild verification record](docs/rebuild-verification.md).
+
+The latest update adds the **3** phone shortcut, field treatment, battle-state safeguards and shader preparation for the actual render passes. The cat has revised Blender anatomy and packed tabby materials; all eight exported Faint animations have sampled floor-contact checks. A small pale patch remains on the cat's upper foreleg, and the animals remain stylized. The final hamster, rat and rabbit whisker-fold corrections passed source/export contact tests but were not visually re-rendered before this release.
 
 **Walked traversal, a fresh campaign from beginning to ending, and physical mobile hardware have not been validated for this rebuilt version.** The browser checks use explicit position/save fixtures and direct business functions with input capture suppressed. They verify selected logic and views, without establishing that every route, interaction or camera angle is polished.
 
-Performance observations remain mixed: the 21-view pass recorded an unexplained **599.9 ms frame interval** in the utility room. Nine corrected-lighting retry views reached a maximum settled interval of **16.9 ms**, but **586 ms and 290 ms arrival Long Tasks** occurred outside those settled measurement windows. These headless workstation results do not establish hitch-free play or mobile performance.
+The shader correction removed the observed hall and kitchen arrival Long Tasks in a focused repeat capture; their baseline Long Tasks were **591 ms and 275 ms**. A **55.6 ms hall frame interval remained**, and an earlier **599.9 ms utility-room interval** remains unexplained. See [shader preparation verification](docs/shader-preparation-verification.md) for the measurements and scope. These headless workstation results do not establish hitch-free play or mobile performance.
 
 Automated coverage includes combat and progression rules, saves and messages, animal movement, source/export mappings, roads and housing, leader battle clearances, home/clinic/shop access, residential paths, terrain grounding and road-detail heights.
 
@@ -107,7 +112,7 @@ The optional browser integration harness remains dormant unless explicitly enabl
 node scripts/no-input-integration.mjs --run
 ```
 
-It opens an isolated headless browser and invokes game functions through a temporary test bridge, without mouse, keyboard or pointer-lock input. The completed 41-assertion run includes the opening SMS/bag/starter sequence, a finite-supply rival victory, purchases, phone navigation and save/load. Direct target callbacks bypass line-of-sight interaction selection. Reports and screenshots go to `artifacts/`, including `no-input-integration.json`. Running without `--run` starts no browser.
+It opens an isolated headless browser and invokes game functions through a temporary test bridge, without mouse, keyboard or pointer-lock input. The completed 59-assertion run includes the opening SMS/bag/starter sequence, a finite-supply rival victory, purchases, treatment, phone navigation and save/load. Direct target callbacks bypass line-of-sight interaction selection. Reports and screenshots go to `artifacts/`, including `no-input-integration.json`. Running without `--run` starts no browser.
 
 The separate `scripts/no-input-world-review.mjs --run` harness captures named semantic views with two seconds to settle and three seconds of frame observations per view. Freeze runtime source files during a capture; navigation or hot reload invalidates that run. Results are local diagnostics, not a campaign completion claim.
 

@@ -157,8 +157,8 @@
       "asset": "cat",
       "source": "assets/cat.blend",
       "model": "models/cat.glb",
-      "editableObjects": 15,
-      "packedImages": 2,
+      "editableObjects": 2,
+      "packedImages": 4,
       "armatures": 1
     },
     {

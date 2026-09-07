@@ -1,0 +1,114 @@
+{
+  "dog": {
+    "structure": {
+      "geometry": "87fe27b361fe49502a0486d398c0141caac51f9689974854cacacb0a0c27a9fd",
+      "materials": "2eceab517b0ed6038647e33cb43e1185879a0383ea8fb9d73dbe39c5bde6c642",
+      "images": "69f7fd9e7292e2dd84002d92e0c43726183a168bad4cb832bb4d793588bd9114",
+      "rig": "93af98b7d6187436e36435818b92b111269d664aeeff324f21b7774453bd0a93"
+    },
+    "clips": {
+      "Idle": "6ea3c1edfed7ddb862766e0c5bd63545d02fd96da02f06f013207f9676842d85",
+      "Walk": "415f64c9b64f84856b8527c527d529bfef810e8ede71423eb36edacb9565d5d2",
+      "Attack": "84b4fd48abd2f2acb0b30456deff4ed1f2012d8d493c648d9987387e459d307c",
+      "Hit": "511b20a40856f7acb21d0a4642799f587e151a4c38e8a2f960ec7a90017d8f8f"
+    },
+    "faintOtherTransforms": "4feb1213933d450840980764e86a9b25c401b92b58dc6eb4ae1b43dd2c2fd3f3",
+    "duration": 1.6666666269302368
+  },
+  "hamster": {
+    "structure": {
+      "geometry": "0b7be0ae4fe9dfe3d32c4e636ae9de4440e933afcc3dd127353823d2b64e3aff",
+      "materials": "b06c0289ae810affc603faeec65749e0857d46779e8f00c44b4e5e6e75c21ef4",
+      "images": "358664af7dbd7df13cf7a60089e81437ab79b5231b12cdaa14a4d6c6800a9650",
+      "rig": "98e88ce71a157fec614cfd7c308a4c7f9eae87388095809de0a72c6e87a66e4c"
+    },
+    "clips": {
+      "Idle": "93313c4f9fbd1f920f391c9deaefa1a639951de8a673b6b5125b8ac86616e79a",
+      "Walk": "03c10e05586b07dbcbca98dca6c8d7ca9079f8c2dee10528cd87fbd31c2f773d",
+      "Attack": "856b786e31c964cd887cefe2fffb96b180351b974f96d7b9f3f9ef9aa9e5cd67",
+      "Hit": "7fce48b4e1a26f247631f59966dd70ffa13de11bf39f2b1db89d5cbe26472490"
+    },
+    "faintOtherTransforms": "98eee27f7467ad7fc723616c53160d2427d2aa7b173258665cfc50acd988fca2",
+    "duration": 1.6666666269302368
+  },
+  "rat": {
+    "structure": {
+      "geometry": "112ee045f8a3feb2a2943b1f7140720e17f4e46f41f03c85d103bf541a09717c",
+      "materials": "7d1a6492632f1c8e5d72b0f7d8623e5bf7438229162464927c039ca2eb20c476",
+      "images": "b03eaf806780c8eb1db5eabd3ed8973b5569bab9f9bf7987b8172c5c8f3d89df",
+      "rig": "85bffd7da0d00e8dcd306a68155560c2d631d4b93ff918b87655f8da488d124f"
+    },
+    "clips": {
+      "Idle": "0cb2420dd02959c181ef70831eef9a81b31efdbd89c9f690c8c9dc9d38739341",
+      "Walk": "e7bb61a9962f81173b0ecf73693ba7faf8317ebd53b15d5ca43af4a91564bda8",
+      "Attack": "b699d45c1d3013eeb34d0532a2696c22fec91a1acf04b749a72bd6bf91b58f09",
+      "Hit": "0798d14ad9de5cb239f991d3d4761d7101bb939b700417e0cd0c35785ba02691"
+    },
+    "faintOtherTransforms": "139632339f08eb6336e9fc7cd46a68c8bd13d275210eb8dd27970a60c0a78310",
+    "duration": 1.6666666269302368
+  },
+  "fox": {
+    "structure": {
+      "geometry": "4a6c27c8dc4d028c07af6fde3bd1292a5157519533ad7d6b1fd819f5e2e4ab6d",
+      "materials": "f0d823fb5e0cfef666c388b5503d686256185ef71b10856fd4fcfb1cb66201a9",
+      "images": "c0eaa1b3976a4f2919c3673b4097ff33303ffffc9a5658710e49e7aa5fef83ca",
+      "rig": "f98479aa23370b0f08e29e587e5636bdcb8c196829364e8f85361512253ae935"
+    },
+    "clips": {
+      "Idle": "e752afa1a814cda52dbf7a1e9ff110eafcbc4cfc910ba4324211dbfe21c3d1bf",
+      "Walk": "0f2da47d09287175ffc5f11fd892cfb5838f33cfe7f25237d281f67e2583307a",
+      "Attack": "5ab317d92a1e7d2e07bdd6452ffb430cfdb4322e01ab6db92fab2bbf23ce51ed",
+      "Hit": "51c7005f3fb26366663c344f6962a2edc16246de11a9b97e11de881ae2466ffd"
+    },
+    "faintOtherTransforms": "b94f427146d3fb3e0657835f933cee3bfe204206b241fae460f0132ed0e3ff02",
+    "duration": 1.6666666269302368
+  },
+  "rabbit": {
+    "structure": {
+      "geometry": "a20d4dedb9a6f12011492dd8ba8e42f77093beac58e11454a0cbdb2699217a9d",
+      "materials": "ec88b5a8328e3181613646bd0f1e7474b7ac95227714895581745afdf4503f45",
+      "images": "24e9182ea0aa51a44bf69088e6dd3b0b371dc05e5f03e8e8342d10de343a1749",
+      "rig": "f5d584e0eb8af9cfa37cd1a6ea634beca35397621a04aa2e9f08256fa85e3c34"
+    },
+    "clips": {
+      "Idle": "050cffe9940d85802de0a96662cbc34d730727847b27587835ab0762b9c2d6da",
+      "Walk": "6fe718fe6704a060040d2786f83503590d146f21be4b89964e75333c85d6ad9a",
+      "Attack": "14bcf5f4a4b076d170d8da53c69118892db12f812fe69082681a9b0a52d32f61",
+      "Hit": "6769ba4db05f956c786b97879e1ff1f53506e9f4e4df00495db632e774cf2e13"
+    },
+    "faintOtherTransforms": "bdb905b3ae17c40f1aa8397ca973edf2583a66226d057c90d1031448d6b2891e",
+    "duration": 1.6666666269302368
+  },
+  "raccoon": {
+    "structure": {
+      "geometry": "20957f387be354f1232b3fe773b82aa558fce8883516434ba1158e5c12baebb9",
+      "materials": "a6432c8fc00650b27619cd8d8233b9bde8568b9129ec69c0f353affd95c227a2",
+      "images": "30708b10fe2ceb566b9c117730f7bafe230b97f941d7d7b4dd7259dab5c0506c",
+      "rig": "de07ecaedf7de9eef4ada2ef111cf20b91632399860cdc3caa6a12b1b78f3c9d"
+    },
+    "clips": {
+      "Idle": "cbec58a20a253b1d40bb2d0fd4ae2451b9782ba04df06da7acd8a477b996ea65",
+      "Walk": "1585de6af8c3d74f59dde5c4e337758d3dd25b9dde35a8a6d801ed70174eef93",
+      "Attack": "4f4df19cfcab3d245bf18a96dc5362748866027d5db869576d223ab03a814bf9",
+      "Hit": "3bafd6ba2d452dbd3374d829706fc4ff739c76781c4a167da10b61514f7abc04"
+    },
+    "faintOtherTransforms": "dd87032476e03afa31a272a9b922b5a9791a2edd8fd1a2e7eb57a92129997fd0",
+    "duration": 1.6666666269302368
+  },
+  "goat": {
+    "structure": {
+      "geometry": "6c0e74a1fc94f7c0c2311eea6b975c7f78b148f097e36ee4cfc6d50c928ccd54",
+      "materials": "cc8962b946269ccf9fe0eb78a108e41f7cfb9933c8dfb736f459247c349d8464",
+      "images": "ad05742cb63216f81adb2dcc66d1cba8d271ce0d561414fbc4691a17bb404feb",
+      "rig": "82ff509f0d926c0e315973ed316b113ea83f6068e16c668e076fcde22c435173"
+    },
+    "clips": {
+      "Idle": "31df8ce0244a4478dd59387d2eac7ca15dd27c4e1ae5d9de78061d16975ce4be",
+      "Walk": "08e8c257474e20fb871ed853059906291422b6ee262819a0e1eddc969f7687bb",
+      "Attack": "01552dd1c09fb0e4a7ff80462b0b7c065abd4d793223b576d29daa0671c98d69",
+      "Hit": "3252c2cb368f3b16aa48294c69202ff722f425b6f2866337c2926b19eeff97fe"
+    },
+    "faintOtherTransforms": "20cfb491a95336cbdf538cff8cc342c2cebb2c0cf583a8799d787805e5f18ac3",
+    "duration": 1.6666666269302368
+  }
+}

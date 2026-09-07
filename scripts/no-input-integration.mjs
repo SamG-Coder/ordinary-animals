@@ -34,17 +34,19 @@ window.__integration = {
       selectedStarter,position:{x:position.x,y:position.y,z:position.z},
       cameraPosition:{x:camera.position.x,y:camera.position.y,z:camera.position.z},titlePosition:{x:titlePosition.x,y:titlePosition.y,z:titlePosition.z},
       phoneClasses:[...$('phone').classList],hasHeldModel:$('phone').classList.contains('has-held-model'),phoneRect:rectInfo('phone'),phoneScreenRect:rectInfo('phone-screen'),
+      phoneFocusableIds:phoneFocusables($('phone')).map(el=>el.id).filter(Boolean),
       visible:Object.fromEntries(['title-app','registration','settings-panel','dialogue','choose','journal','battle','phone','battle-root','move-buttons','battle-actions','battle-continue'].map(id=>[id,visible(id)])),
       phoneTitle:$('phone-app-title').textContent, objective:$('objective')?.textContent,
       contacts:$('tab-contacts').textContent,bagText:$('tab-bag').textContent,
       smsBubbles:[...$('tab-contacts').querySelectorAll('.sms-bubble')].map(el=>el.textContent),
       bagButtons:[...$('tab-bag').querySelectorAll('button')].map(el=>({text:el.textContent,disabled:el.disabled})),
+      partyLeadButtons:[...$('tab-party').querySelectorAll(':scope > .party-row')].map(row=>{const button=row.querySelector('button');return{text:button?.textContent,disabled:button?.disabled};}),
       mapButtons:[...$('badge-list').querySelectorAll('button')].map(el=>({text:el.textContent,disabled:el.disabled})),
       room:roomAt(position.x,position.z),atSupplyCounter:atSupplyCounter(),
       bagVisible:worldInfo?.openingBag?.visible,bagUnavailable:targets.find(t=>t.id==='school-bag')?.unavailable,
       companion:actorInfo(companion),reusesStarter:[...starterAnimals.values()].includes(companion),
       starterActors:Object.fromEntries([...starterAnimals.entries()].map(([id,a])=>[id,{...actorInfo(a),unavailable:a.target.unavailable,removed:a.removed}])),
-      battle:battle?{config:battle.config,enemy:battle.enemy,enemyIndex:battle.enemyIndex,active:battle.active,busy:battle.busy,finished:battle.finished,turn:battle.turn,menu:battle.menu,left:actorInfo(battle.left),right:actorInfo(battle.right),growthMessages:battle.growthMessages,log:$('battle-log').textContent}:null,
+      battle:battle?{config:battle.config,enemy:battle.enemy,enemyIndex:battle.enemyIndex,active:battle.active,busy:battle.busy,finished:battle.finished,turn:battle.turn,menu:battle.menu,left:actorInfo(battle.left),right:actorInfo(battle.right),growthMessages:battle.growthMessages,log:$('battle-log').textContent,allyStatus:$('ally-status').textContent,enemyStatus:$('enemy-status').textContent,medkitDisabled:$('heal-btn').disabled}:null,
       safety:{...window.__inputStubs},pointerLocked:Boolean(document.pointerLockElement)
     };
   },
@@ -61,12 +63,16 @@ window.__integration = {
   mum(){openMumChat();},
   mumReply(index){const button=$('tab-contacts').querySelectorAll('.sms-reply')[index];if(!button)throw new Error('Missing SMS reply');const action=button.onclick;action.call(button);},
   showJournal,phoneHome,showSettings,close,travelToKnownLocation,travelToDistrict,
-  purchase(label){const button=[...$('tab-bag').querySelectorAll('button')].find(el=>el.textContent.includes(label));if(!button)throw new Error('Missing bag purchase '+label);return button.onclick.call(button);},
+  purchase(label){const button=[...$('tab-bag').querySelectorAll('button')].find(el=>/^(COLLECT|ORDER) /.test(el.textContent)&&el.textContent.includes(label));if(!button)throw new Error('Missing bag purchase '+label);return button.onclick.call(button);},
+  treat(index){const button=$('tab-bag').querySelectorAll('.bag-treatment')[index];if(!button)throw new Error('Missing treatment target '+index);return button.onclick.call(button);},
+  manualParty(index){const button=$('tab-party').querySelectorAll(':scope > .party-row')[index]?.querySelector('button');if(!button)throw new Error('Missing party target '+index);return button.onclick.call(button);},
+  openBattleParty(){return $('switch-btn').onclick();},
   loadCampaign(){return $('load-game').onclick();},
   settingsClose(){const action=$('settings-close').onclick;action();},
   back(){const action=$('phone-back').onclick;action();},
   chooseBattleMenu(menu){battle.menu=menu;renderBattle();},
-  startBattle,turn,
+  startBattle,endBattle,swapAnimal,turn,
+  retreat(){return $('run-btn').onclick();},
   medkit(){const action=$('heal-btn').onclick;return action();},
   continueBattle(){const action=$('battle-continue').onclick;return action();},
   takeStarter,
@@ -74,6 +80,11 @@ window.__integration = {
   semanticApproach(id,dx=0,dz=2){const t=targets.find(t=>t.id===id);if(!t)throw new Error('Missing target '+id);const x=t.x+dx,z=t.z+dz;position.set(x,floor(x,z)+EYE_HEIGHT,z);yaw=Math.atan2(dx,dz);pitch=-0.045;return{x,z,target:{x:t.x,z:t.z}};},
   semanticGymApproach(i){const t=worldInfo.towns[i];const x=t.gymX,z=t.gymZ+2.6;position.set(x,floor(x,z)+EYE_HEIGHT,z);yaw=0;pitch=-0.045;return{x,z};},
   semanticFixture(raw){if(battle)throw new Error('Cannot replace an active battle');state=parseSave(JSON.stringify(raw));if(!state)throw new Error('Invalid fixture');position.set(state.position.x,floor(state.position.x,state.position.z)+EYE_HEIGHT,state.position.z);yaw=state.yaw;pitch=state.pitch;enterWorld();},
+  semanticBattleModifiers(ally,enemy){if(!battle||battle.busy||battle.finished)throw new Error('No idle fixture battle');for(const key of ['attackStage','defenseStage','status']){state.party[battle.active][key]=ally[key];battle.enemy[key]=enemy[key];}renderBattle();},
+  semanticPreBattleStages(){if(battle)throw new Error('Fixture requires exploration');state.party.forEach(animal=>{animal.attackStage=2;animal.defenseStage=1;});},
+  semanticPartyGuardFixture(){if(battle)throw new Error('Fixture requires exploration');state.party=[state.party[0],makeAnimal('dog',11),{...makeAnimal('rat',5),hp:0}];return JSON.parse(JSON.stringify(state.party));},
+  semanticPartyGuardPhase(phase){if(!battle||!['busy','finished','idle'].includes(phase))throw new Error('Invalid guard fixture phase');battle.busy=phase==='busy';battle.finished=phase==='finished';renderBattle();},
+  semanticAutomaticReplacementFixture(){if(!battle)throw new Error('Missing fixture battle');battle.busy=true;state.party[battle.active].hp=0;state.party[battle.active].attackStage=-1;state.party[1].defenseStage=2;},
   save,rest,
   modelLookPreference(){lookControl.engage();},
 };
@@ -190,6 +201,14 @@ try {
   );
   const arrivedSms = JSON.stringify(s.state.messages);
   report.snapshots.openingSms = s;
+  check(
+    "The opening SMS focus scope includes phone Back, Home, NEXT and the Home bar",
+    ["phone-back", "phone-home", "next", "phone-home-bar"].every((id) =>
+      s.phoneFocusableIds.includes(id),
+    ) &&
+      !s.phoneFocusableIds.includes("player-name") &&
+      !s.phoneFocusableIds.includes("load-game"),
+  );
   await call("phoneHome");
   s = await view();
   check(
@@ -307,6 +326,19 @@ try {
     "Same-version save validation preserves health and chosen moves",
     JSON.stringify(s.roundTrip.party) === JSON.stringify(s.state.party),
   );
+  const healthyStarter = {
+    medkits: s.state.medkits,
+    party: JSON.stringify(s.state.party),
+  };
+  await call("showJournal", "bag");
+  await call("treat", 0);
+  s = await view();
+  check(
+    "Field treatment rejects a fully healthy starter without spending supplies",
+    s.state.medkits === healthyStarter.medkits &&
+      JSON.stringify(s.state.party) === healthyStarter.party,
+  );
+  await call("close");
   await call("modelLookPreference");
   report.snapshots.rivalApproach = await call(
     "semanticApproach",
@@ -326,6 +358,23 @@ try {
   check(
     "Battle models use actual animal levels",
     s.battle.left.level === 5 && s.battle.right.level === 4,
+  );
+  const beforeFullBattleKit = {
+    medkits: s.state.medkits,
+    party: JSON.stringify(s.state.party),
+    enemy: JSON.stringify(s.battle.enemy),
+    turn: s.battle.turn,
+  };
+  await call("medkit");
+  s = await view();
+  check(
+    "A full-HP battle medkit is disabled and its handler spends neither item nor turn",
+    s.battle.medkitDisabled &&
+      !s.battle.busy &&
+      s.state.medkits === beforeFullBattleKit.medkits &&
+      JSON.stringify(s.state.party) === beforeFullBattleKit.party &&
+      JSON.stringify(s.battle.enemy) === beforeFullBattleKit.enemy &&
+      s.battle.turn === beforeFullBattleKit.turn,
   );
   await call("showJournal", "party");
   check(
@@ -355,6 +404,20 @@ try {
     Boolean(s.battle?.finished),
   );
   report.rivalOutcome = s.state.wins.includes("rival") ? "win" : "loss";
+  const beforeFinishedKit = {
+    medkits: s.state.medkits,
+    party: JSON.stringify(s.state.party),
+    turn: s.battle.turn,
+  };
+  await call("medkit");
+  s = await view();
+  check(
+    "The medkit handler rejects a finished battle without changing health or supplies",
+    s.battle.finished &&
+      s.state.medkits === beforeFinishedKit.medkits &&
+      JSON.stringify(s.state.party) === beforeFinishedKit.party &&
+      s.battle.turn === beforeFinishedKit.turn,
+  );
   await call("continueBattle");
   await call("finishDialogue");
   s = await view();
@@ -405,6 +468,38 @@ try {
       s.stored.medkits === s.state.medkits,
   );
   report.snapshots.shopPurchase = { before: beforePurchase, after: s };
+  const fieldTarget = s.state.party.findIndex(
+    (animal) => animal.hp > 0 && animal.hp < animal.maxHp,
+  );
+  await page.screenshot({ path: "artifacts/no-input-bag-treatment.png" });
+  if (fieldTarget >= 0 && s.state.medkits > 0) {
+    const before = structuredClone(s.state);
+    const animal = before.party[fieldTarget];
+    const recovered = Math.min(
+      animal.maxHp - animal.hp,
+      Math.ceil(animal.maxHp * 0.6),
+    );
+    await call("treat", fieldTarget);
+    s = await view();
+    check(
+      "A real field treatment spends one medkit on the selected injured animal and saves recovery",
+      s.state.party[fieldTarget].hp === animal.hp + recovered &&
+        s.state.medkits === before.medkits - 1 &&
+        s.state.money === before.money &&
+        s.state.carriers === before.carriers &&
+        s.stored.medkits === s.state.medkits &&
+        s.stored.party[fieldTarget].hp === s.state.party[fieldTarget].hp,
+    );
+    report.snapshots.fieldTreatment = {
+      before,
+      target: fieldTarget,
+      recovered,
+      after: s,
+    };
+  } else {
+    report.fieldTreatmentNotExercised =
+      "The original-RNG rival result left no conscious injured animal with a medkit available. No damage or resources were invented to force this check; pure treatment tests cover recovery.";
+  }
   await call("back");
   check(
     "Phone Back returns from Bag to the phone home screen",
@@ -526,6 +621,25 @@ try {
   );
   await page.screenshot({ path: "artifacts/no-input-third-battle.png" });
   report.snapshots.semanticBattle = s;
+  report.semanticBattleModifiers = {
+    ally: { attackStage: -1, defenseStage: 2, status: "dazed" },
+    enemy: { attackStage: -2, defenseStage: 1, status: null },
+    scope:
+      "Display-only modifiers applied to the separate documented third-leader fixture. No combat actions, healing or RNG changes follow.",
+  };
+  await call(
+    "semanticBattleModifiers",
+    report.semanticBattleModifiers.ally,
+    report.semanticBattleModifiers.enemy,
+  );
+  s = await view();
+  check(
+    "Battle health panels persist signed ATK/DEF stages alongside HP and daze",
+    s.battle.allyStatus.includes("DAZED · ATK −1 · DEF +2") &&
+      s.battle.enemyStatus.includes("ATK −2 · DEF +1"),
+  );
+  report.snapshots.semanticStatusDisplay = s;
+  await page.screenshot({ path: "artifacts/no-input-third-status.png" });
   const beforeGuard = {
     money: s.state.money,
     medkits: s.state.medkits,
@@ -555,6 +669,153 @@ try {
     "Phone Home restores the live battle after guarded app actions",
     s.visible.battle && !s.modal,
   );
+  // Boundary-only checks use the preceding explicit semantic fixture. Ending
+  // that leader fixture directly is cleanup, not a legal player retreat/win.
+  const boundaryBefore = structuredClone(s.state);
+  const withoutStages = (party) =>
+    party.map(({ attackStage, defenseStage, ...animal }) => animal);
+  const boundaryUnchanged = (before, after) =>
+    JSON.stringify(withoutStages(before.party)) ===
+      JSON.stringify(withoutStages(after.party)) &&
+    before.medkits === after.medkits &&
+    before.carriers === after.carriers &&
+    before.money === after.money &&
+    JSON.stringify(before.badges) === JSON.stringify(after.badges) &&
+    JSON.stringify(before.wins) === JSON.stringify(after.wins);
+  await call("endBattle", false);
+  s = await view();
+  check(
+    "Ending the semantic encounter clears temporary stages without healing, curing or awarding resources",
+    !s.battle &&
+      s.state.party.every(
+        (animal) => animal.attackStage === 0 && animal.defenseStage === 0,
+      ) &&
+      boundaryUnchanged(boundaryBefore, s.state),
+  );
+  await call("semanticPreBattleStages");
+  await call("startBattle", {
+    id: "boundary-wild-fixture",
+    kind: "wild",
+    name: "Boundary fixture",
+    roster: ["rat"],
+    level: 3,
+  });
+  s = await view();
+  check(
+    "A new encounter discards stale stages while preserving HP, daze, moves and supplies",
+    s.battle &&
+      s.state.party.every(
+        (animal) => animal.attackStage === 0 && animal.defenseStage === 0,
+      ) &&
+      boundaryUnchanged(boundaryBefore, s.state),
+  );
+  await call(
+    "semanticBattleModifiers",
+    report.semanticBattleModifiers.ally,
+    report.semanticBattleModifiers.enemy,
+  );
+  await call("retreat");
+  s = await view();
+  check(
+    "The actual wild-retreat handler clears stages and gives no healing or progression reward",
+    !s.battle &&
+      s.state.party.every(
+        (animal) => animal.attackStage === 0 && animal.defenseStage === 0,
+      ) &&
+      boundaryUnchanged(boundaryBefore, s.state),
+  );
+  report.snapshots.afterBoundaryRetreat = s;
+  report.boundaryFixtureScope =
+    "The staged third-leader fixture is closed directly for cleanup without rewards, then a separate LV3 Rat encounter checks start/reset and actual retreat handlers. Only temporary stage fields are seeded; HP, moves and finite inventory are unchanged. No capture or victory is forced.";
+  report.partyGuardFixture = {
+    scope:
+      "Separate guard-only fixture adds a conscious LV11 Dog and a fainted LV5 Rat to the existing cat, then explicitly marks a new battle busy/finished/idle. No opponent actions are run and no victory, capture or reward is fabricated. The final internal-replacement check explicitly marks the outgoing animal fainted; it does not claim a played defeat.",
+    party: await call("semanticPartyGuardFixture"),
+  };
+  await call("startBattle", {
+    id: "party-guard-wild-fixture",
+    kind: "wild",
+    name: "Party guard fixture",
+    roster: ["rat"],
+    level: 3,
+  });
+  const partyGuardState = (snapshot) =>
+    JSON.stringify({
+      party: snapshot.state.party,
+      medkits: snapshot.state.medkits,
+      carriers: snapshot.state.carriers,
+      money: snapshot.state.money,
+      badges: snapshot.state.badges,
+      wins: snapshot.state.wins,
+      active: snapshot.battle.active,
+      turn: snapshot.battle.turn,
+      busy: snapshot.battle.busy,
+      finished: snapshot.battle.finished,
+      enemy: snapshot.battle.enemy,
+    });
+  for (const phase of ["busy", "finished"]) {
+    await call("semanticPartyGuardPhase", phase);
+    await call("showJournal", "party");
+    s = await view();
+    const before = partyGuardState(s);
+    check(
+      `The ${phase} fixture disables SEND OUT / MAKE LEAD even for a conscious backup`,
+      s.state.party[1].hp > 0 && s.partyLeadButtons[1].disabled,
+    );
+    await call("manualParty", 1);
+    s = await view();
+    check(
+      `The original manual-switch callback rejects a ${phase} battle without a second turn or reward`,
+      partyGuardState(s) === before && s.modal === "journal",
+    );
+    await call("phoneHome");
+    await call("openBattleParty");
+    check(
+      `The battle ANIMALS callback rejects the ${phase} fixture`,
+      !(await view()).modal,
+    );
+  }
+  await call("semanticPartyGuardPhase", "idle");
+  await call("showJournal", "party");
+  s = await view();
+  const idleBefore = partyGuardState(s);
+  check(
+    "Idle party selection disables the active and fainted slots while enabling a conscious backup",
+    s.partyLeadButtons[0].disabled &&
+      !s.partyLeadButtons[1].disabled &&
+      s.partyLeadButtons[2].disabled,
+  );
+  await call("manualParty", 0);
+  await call("manualParty", 2);
+  check(
+    "Active-slot and fainted-target callbacks are harmless even when invoked directly",
+    partyGuardState(await view()) === idleBefore,
+  );
+  await call("phoneHome");
+  await call("semanticAutomaticReplacementFixture");
+  const beforeAutomatic = await view();
+  await call("swapAnimal", 1);
+  s = await view();
+  check(
+    "Internal automatic replacement remains available while busy and resets outgoing/incoming stages",
+    s.battle.busy &&
+      s.battle.active === 1 &&
+      s.state.party[0].hp === 0 &&
+      s.state.party[1].hp === beforeAutomatic.state.party[1].hp &&
+      s.state.party
+        .slice(0, 2)
+        .every(
+          (animal) => animal.attackStage === 0 && animal.defenseStage === 0,
+        ) &&
+      s.battle.turn === beforeAutomatic.battle.turn &&
+      JSON.stringify(s.battle.enemy) ===
+        JSON.stringify(beforeAutomatic.battle.enemy) &&
+      s.state.medkits === beforeAutomatic.state.medkits &&
+      s.state.carriers === beforeAutomatic.state.carriers,
+  );
+  report.snapshots.partyGuardAutomaticReplacement = s;
+  await call("endBattle", false);
+  s = await view();
   check(
     "No real focus, pointer capture or DOM click was used",
     !s.pointerLocked && s.safety.forbiddenClicks === 0,

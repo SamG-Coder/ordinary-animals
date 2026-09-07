@@ -940,6 +940,13 @@
     sans-serif;
   color: #c2865f;
 }
+#phone #tab-bag .bag-treatment {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.5;
+}
 #phone #ending h2 {
   font-size: 32px;
 }

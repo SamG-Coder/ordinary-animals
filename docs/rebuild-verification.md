@@ -1,6 +1,6 @@
 # Rebuild verification — 8 September 2026
 
-This record describes the current development rebuild and the limits of its checks. The final unit suite, source audit, image-hash regeneration, production build and 41-assertion integration run are complete. Six final world views also passed capture validation after the leader fill lighting, lodge fascia and puddle edits, with no source changes, hot reload or page errors.
+This record describes the development rebuild published as `f614503` and the limits of its checks. The unit suite, source audit, image-hash regeneration, production build and 41-assertion integration run were complete for that release. Six final world views also passed capture validation after the leader fill lighting, lodge fascia and puddle edits, with no source changes, hot reload or page errors. Subsequent shader work is recorded in [shader preparation verification](shader-preparation-verification.md); the README tracks the latest release checks.
 
 ## Completed evidence
 

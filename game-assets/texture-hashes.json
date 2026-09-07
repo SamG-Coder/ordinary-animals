@@ -268,29 +268,45 @@
     },
     "cat": {
       "model": "models/cat.glb",
-      "modelSha256": "00249081bea6572a076cd39617e06efc7eab8f4ffdad3cd653db21f814965345",
+      "modelSha256": "cc2f9e4094f6c5a30d53b04933c0e8d110764905ead1a44991d8ea9a896c5501",
       "images": {
         "0": {
-          "sha256": "9532861bf8c98817c9a834aa821e570f0ca43ae2a776846d344e10db8e0fbb35",
-          "bytes": 201684,
+          "sha256": "cbd54b09e89c4693ecdbed47ed44251bf6c8e5d83ac42a669bd4c39ebf68c8d7",
+          "bytes": 385602,
           "mimeType": "image/webp",
-          "width": 1024,
-          "height": 1024,
+          "width": 2048,
+          "height": 2048,
           "duplicate": false
         },
         "1": {
-          "sha256": "464f19071ae3b062b8489944007f0fbb21de8668f8b060faa239e37d69e3e44d",
-          "bytes": 48558,
+          "sha256": "d2e723f44df1e038177fb00a96d23afd17dbd7d44aa08ce28f9d18c9d03f4adc",
+          "bytes": 293150,
           "mimeType": "image/webp",
-          "width": 1024,
-          "height": 1024,
+          "width": 2048,
+          "height": 2048,
+          "duplicate": false
+        },
+        "2": {
+          "sha256": "e8d66d615237a8fd4b47625d9db81ddf5db1a92497cc21c085becb9c68a121c4",
+          "bytes": 403176,
+          "mimeType": "image/webp",
+          "width": 2048,
+          "height": 2048,
+          "duplicate": false
+        },
+        "3": {
+          "sha256": "0d5ff5829f4c7793719c467142c5f739db9b9d62cde19f9fe08040af6c4caa07",
+          "bytes": 5870,
+          "mimeType": "image/webp",
+          "width": 256,
+          "height": 256,
           "duplicate": false
         }
       }
     },
     "dog": {
       "model": "models/dog.glb",
-      "modelSha256": "d1ca44c91a093a27c916f62afb7d1f3258ae60854a5d9f1b555d8432fee75cdf",
+      "modelSha256": "ee1ea149aceb3db5da7cf2edf07b00609dfe51d826649434c79873cea0c3952a",
       "images": {
         "0": {
           "sha256": "f43f612a5476a03acfa0973b06c04888a8ef160d71fe7b40e03a700f51e91b1a",
@@ -312,7 +328,7 @@
     },
     "hamster": {
       "model": "models/hamster.glb",
-      "modelSha256": "bdc2c485520718f637997c1062cf3aef485b4c80751e9c2cc07b1ccced777ba9",
+      "modelSha256": "58e0b3c2f2b12e802eafadc2dba5c467ebd3a1be9c712e718e0121094c59cfa5",
       "images": {
         "0": {
           "sha256": "a8b738b01c2b5696bf0ce7fc396cd34a3725d6a89b65fa8609eca46e0dbcdff4",
@@ -334,7 +350,7 @@
     },
     "rat": {
       "model": "models/rat.glb",
-      "modelSha256": "f2ae71f825559e618ae8170ac8477eb6c29428eafe042f49542e045f59d959fd",
+      "modelSha256": "e59bd16913420fb0f782c32d1684a7876cbb87ef02ccc4dac145a9b07954a055",
       "images": {
         "0": {
           "sha256": "31c48fc74e1a9e179825ef49555ebdfa426f385ba8d34d46d519b2461d2e6450",
@@ -356,7 +372,7 @@
     },
     "fox": {
       "model": "models/fox.glb",
-      "modelSha256": "1fbca2e0d0843d37c5da295637e951732a0e0598d0949270dc6725f4a2ec64a1",
+      "modelSha256": "d74a86d98e438fa1ce41376ed3d22505559a54985ab6204db23be402984787ab",
       "images": {
         "0": {
           "sha256": "be25972c1a79ba44f4f3d70f2989b3ee47d97575fda951957c4f4f2b934d40ac",
@@ -378,7 +394,7 @@
     },
     "rabbit": {
       "model": "models/rabbit.glb",
-      "modelSha256": "71ba7b06782467cb29a4de28123aff59731da09b0aa33bc9d802b4b9b542140a",
+      "modelSha256": "148d99a60e0537940ccaf9b96ac0d239dc418a47149771a1bcc3bc1c2caa4810",
       "images": {
         "0": {
           "sha256": "da7d9b601410146cf7303902ead8cb9bbb885216ab11c8f255b4003946fb7943",
@@ -400,7 +416,7 @@
     },
     "raccoon": {
       "model": "models/raccoon.glb",
-      "modelSha256": "005873c1a5faac127428be08285417de4d45fc3d1a3b7b054fa8087668b5ad76",
+      "modelSha256": "9964e8f6da2d0def5f1ce17ccfbd0c144ba303039f79a0fdf05010066922c4f1",
       "images": {
         "0": {
           "sha256": "81b5c510749219e89f6d2ade0d292a7a652ef0486fef908b0a73ac1b130cf039",
@@ -422,7 +438,7 @@
     },
     "goat": {
       "model": "models/goat.glb",
-      "modelSha256": "22b8ad7975ce6b1e0633a30f5342d5750bd785896dd524cb66cc0c2a887fa644",
+      "modelSha256": "0fc517ae54646b89c9ce2c0777504b1ab257b6f479b1b585701d9d7f5646f616",
       "images": {
         "0": {
           "sha256": "84f4fffdc7a37af5ecd203051d94f32f0e9e80d9dd4c1934adfaa6051dc4402c",

@@ -31,16 +31,23 @@ import {
   growthFor,
   battleStats,
   gainLevels,
+  medkitRecovery,
+  useMedkit,
+  battleStatusText,
+  clearBattleStages,
+  canSelectPartyAnimal,
 } from "./rules.js";
 import "./style.css";
 import "./game-ui.css";
 import "./phone-ui.css";
 import { appendMessage } from "./phone-messages.js";
-import { mountPhone } from "./phone-ui.js";
+import { mountPhone, phoneFocusables, phoneFocusWrap } from "./phone-ui.js";
+import { gameplayShortcut, ignoresGameKeyboard } from "./game-shortcuts.js";
 import { isMorrowQuayWater } from "./morrow-quay.js";
 import { HOME_CLINIC_RIVAL } from "./home-clinic.js";
 import { getBattleAdvice } from "./battle-advice.js";
 import { createHeldPhone } from "./held-phone.js";
+import { prepareWorldShaders } from "./shader-preparation.js";
 import {
   createAssetTexturePool,
   createTextureUploadQueue,
@@ -457,7 +464,7 @@ function open(id) {
     const first =
       id === "registration"
         ? $("player-name")
-        : $(id).querySelector("button:not([disabled])");
+        : phoneFocusables($(id))[0];
     first?.focus();
   }, 20);
 }
@@ -768,6 +775,7 @@ function startBattle(config) {
   close(false);
   lookControl.suspend();
   keys.clear();
+  state.party = state.party.map(clearBattleStages);
   battle = {
     config,
     active,
@@ -881,17 +889,15 @@ function renderBattle() {
   $("enemy-level").textContent =
     `LV ${e.level} / ${SPECIES[e.species].type.toUpperCase()}`;
   $("enemy-hp").style.width = `${(100 * e.hp) / e.maxHp}%`;
-  $("enemy-status").textContent =
-    `${e.hp}/${e.maxHp} HP${e.status ? " · " + e.status.toUpperCase() : ""}`;
+  $("enemy-status").textContent = battleStatusText(e);
   $("ally-name").textContent = p.nickname;
   $("ally-level").textContent =
     `LV ${p.level} / ${SPECIES[p.species].type.toUpperCase()}`;
   $("ally-hp").style.width = `${(100 * p.hp) / p.maxHp}%`;
-  $("ally-status").textContent =
-    `${p.hp}/${p.maxHp} HP${p.status ? " · " + p.status.toUpperCase() : ""}`;
+  $("ally-status").textContent = battleStatusText(p);
   $("battle-round").textContent = `TURN ${battle.turn}`;
   $("carrier-count").textContent = state.carriers;
-  $("medkit-count").textContent = state.medkits;
+  $("medkit-count").textContent = `${state.medkits} LEFT · HEALS 60% HP`;
   $("battle-root").hidden = battle.finished || battle.menu !== "root";
   $("move-buttons").hidden = battle.finished || battle.menu !== "fight";
   $("battle-actions").hidden = battle.finished || battle.menu !== "bag";
@@ -919,7 +925,7 @@ function renderBattle() {
     battle.config.kind !== "wild" ||
     state.carriers < 1 ||
     (state.party.length >= 6 && state.reserve.length >= RESERVE_LIMIT);
-  $("heal-btn").disabled ||= state.medkits < 1;
+  $("heal-btn").disabled ||= state.medkits < 1 || !medkitRecovery(p);
   for (const [id, animal] of [
     ["enemy-hp", e],
     ["ally-hp", p],
@@ -1184,6 +1190,7 @@ function endBattle(resume = true) {
   if (!battle) return;
   removeActor(battle.left);
   removeActor(battle.right);
+  state.party = state.party.map(clearBattleStages);
   battle = null;
   $("battle").hidden = true;
   $("hud").hidden = false;
@@ -1207,7 +1214,10 @@ function blackout() {
   );
 }
 function swapAnimal(index) {
-  if (!battle || state.party[index].hp <= 0) return;
+  if (!battle || !Number.isInteger(index) || index === battle.active ||
+      !state.party[index] || state.party[index].hp <= 0) return;
+  state.party[battle.active] = clearBattleStages(state.party[battle.active]);
+  state.party[index] = clearBattleStages(state.party[index]);
   battle.active = index;
   removeActor(battle.left);
   battle.left = actor(
@@ -1252,13 +1262,13 @@ $("capture-btn").onclick = async () => {
   }
 };
 $("heal-btn").onclick = async () => {
-  if (!battle || battle.busy || !state.medkits) return;
+  if (!battle || battle.busy || battle.finished) return;
+  const recovered = useMedkit(state, battle.active);
+  if (!recovered) return;
   battle.busy = true;
-  state.medkits--;
   const p = state.party[battle.active];
-  p.hp = Math.min(p.maxHp, p.hp + Math.ceil(p.maxHp * 0.6));
   $("battle-log").textContent =
-    `Treated ${p.nickname}. The opponent does not pause for paperwork.`;
+    `Treated ${p.nickname}: +${recovered} HP. The opponent does not pause for paperwork.`;
   renderBattle();
   await delay(750);
   await perform(false, enemyMove());
@@ -1274,7 +1284,7 @@ $("run-btn").onclick = () => {
   toast("You retreat. Sensible.");
 };
 $("switch-btn").onclick = () => {
-  if (!battle || battle.busy) return;
+  if (!battle || battle.busy || battle.finished) return;
   partySelection = true;
   showJournal("party");
 };
@@ -1722,12 +1732,13 @@ function renderJournal() {
       row.innerHTML = `<div><h3>${a.nickname}</h3><p>LV ${a.level} · ${SPECIES[a.species].type.toUpperCase()} · ${a.hp}/${a.maxHp} HP</p></div>`;
       const b = document.createElement("button");
       b.textContent = partySelection ? "SEND OUT" : "MAKE LEAD";
-      b.disabled = a.hp <= 0 || (battle && i === battle.active);
+      b.disabled = !canSelectPartyAnimal(state.party, i, battle);
       b.onclick = async () => {
+        if (!canSelectPartyAnimal(state.party, i, battle)) return;
         if (battle) {
+          battle.busy = true;
           close();
           swapAnimal(i);
-          battle.busy = true;
           renderBattle();
           await delay(500);
           await perform(false, enemyMove());
@@ -2019,9 +2030,34 @@ function renderBag() {
     panel.appendChild(row);
   }
   const note = document.createElement("p");
-  note.textContent =
-    "Use carriers and medkits from the battle app. Treatment at home and the research clinic is free.";
+  note.textContent = battle
+    ? "Use carriers and medkits from the battle app during an encounter. Treatment uses your turn."
+    : "Choose an animal below to use one medkit. It restores up to 60% of maximum HP, but cannot revive a fainted animal or cure a status effect. Treatment at home and the clinic is free.";
   panel.appendChild(note);
+  if (!battle && state.party.length) {
+    const heading = document.createElement("h3");
+    heading.textContent = "USE A MEDKIT";
+    panel.appendChild(heading);
+    state.party.forEach((animal, index) => {
+      const button = document.createElement("button");
+      const recovered = medkitRecovery(animal);
+      const condition = animal.hp <= 0 ? "FAINTED · VISIT HOME OR CLINIC" :
+        !recovered ? "FULL HEALTH" : !state.medkits ? "NO MEDKITS" : `+${recovered} HP · 1 MEDKIT`;
+      button.className = "bag-treatment";
+      button.textContent = `${animal.nickname} · ${animal.hp}/${animal.maxHp} HP — ${condition}`;
+      button.disabled = !recovered || state.medkits < 1;
+      button.onclick = () => {
+        if (battle) return;
+        const healed = useMedkit(state, index);
+        if (!healed) return;
+        save();
+        renderBag();
+        updateHUD();
+        toast(`Treated ${animal.nickname}: +${healed} HP. One medkit used.`);
+      };
+      panel.appendChild(button);
+    });
+  }
   for (const [kind, cost, label] of [
     ["carriers", atSupplyCounter() ? 15 : 20, "CARRIER"],
     ["medkits", atSupplyCounter() ? 25 : 30, "MEDKIT"],
@@ -2346,32 +2382,35 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal === "settings-panel") closeSettings();
     if (e.key === "Escape" && modal === "registration") close(false);
     if (e.key === "Tab") {
-      const nodes = [
-        ...$(modal).querySelectorAll("button:not([disabled]),input,select"),
-      ].filter((n) => n.offsetParent !== null);
-      if (!e.shiftKey && document.activeElement === nodes.at(-1)) {
+      const next = phoneFocusWrap($("phone"), document.activeElement, e.shiftKey);
+      if (next) {
         e.preventDefault();
-        nodes[0]?.focus();
-      } else if (e.shiftKey && document.activeElement === nodes[0]) {
-        e.preventDefault();
-        nodes.at(-1)?.focus();
+        next.focus();
       }
     }
     return;
   }
-  if (!playing) return;
+  if (!playing || ignoresGameKeyboard(e)) return;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key))
     e.preventDefault();
   keys.add(e.key.toLowerCase());
   if (e.repeat) return;
+  const shortcut = gameplayShortcut(e, { playing, modal, battle });
+  if (shortcut?.action === "phone") {
+    e.preventDefault();
+    showJournal("apps");
+    return;
+  }
+  if (shortcut?.action === "move") {
+    e.preventDefault();
+    turn(unlockedMoves(state.party[battle.active])[shortcut.index]);
+    return;
+  }
   if (e.key.toLowerCase() === "e") interact();
   if (e.key.toLowerCase() === "f") {
     flashlight.visible = !flashlight.visible;
     if (torch) torch.visible = flashlight.visible;
   }
-  if (e.key.toLowerCase() === "j" && !battle && playing) showJournal();
-  if (battle && ["1", "2", "3", "4"].includes(e.key))
-    turn(unlockedMoves(state.party[battle.active])[Number(e.key) - 1]);
 });
 window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur", () => {
@@ -2922,20 +2961,16 @@ async function load() {
     await new Promise(requestAnimationFrame);
   }
   $("loading-status").textContent = "PREPARING LIGHTING…";
-  // Prepare the actual torch and battle-light shader combinations before the
-  // first player-controlled encounter can request one synchronously.
-  for (const [torchVisible, battleVisible] of [
-    [false, false],
-    [true, false],
-    [false, true],
-    [true, true],
-  ]) {
-    flashlight.visible = torchVisible;
-    battleLight.visible = battleVisible;
-    await renderer.compileAsync(scene, camera);
-  }
-  flashlight.visible = false;
-  battleLight.visible = false;
+  await prepareWorldShaders({
+    renderer,
+    scene,
+    camera,
+    worldTarget: composer.readBuffer,
+    normalTarget: contactShadows.normalRenderTarget,
+    normalMaterial: contactShadows.normalMaterial,
+    flashlight,
+    battleLight,
+  });
   await heldPhone.prepare(renderer);
   $("loading-status").textContent = "WAKING THE COUNTY…";
   renderReady = true;
