@@ -7,3 +7,4 @@ public/textures/
 game-assets/textures/
 game-assets/models/bedroom.glb
 assets/textures/
+__pycache__/

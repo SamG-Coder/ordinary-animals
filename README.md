@@ -1,110 +1,116 @@
 # Ordinary Animals
 
-A dark first-person animal-battling parody. You are ten years old. A man with a white coat has decided that sending children out to collect and battle ordinary animals counts as education.
+A dark first-person animal-battling parody. You are ten years old. A man in a white coat has decided that sending children out to capture ordinary animals counts as education.
 
-**[Play the development build](https://samg-coder.github.io/ordinary-animals/)** · Desktop recommended · MIT © 2026 SamGCoder
+**[Play the development build](https://samg-coder.github.io/ordinary-animals/)** · Desktop recommended · Three.js + Blender · MIT © 2026 SamGCoder
 
-![The opening bedroom](docs/bedroom.png)
+![The held phone controls a live animal battle in the 3D world](docs/screenshots/phone-battle.png)
+
+Captured from the running development build. [View the furnished kitchen](docs/screenshots/home-kitchen.png).
 
 ## The game
 
-Wake up in your bedroom in Wickmere. Read your mother's letter, leave through the hallway, and meet Gary at the county research office. Choose a cat, dog, or hamster, battle your neighbour, capture wild animals, and challenge eight district leaders before the four-round county championship.
+Start a **New Game**, name yourself and your rival, or **Load Game** from a browser save. **Settings** is available before entering the world. The opening begins in your bedroom with an SMS from Mum: it is your tenth birthday, she is at work, and Gary is expecting you.
 
-Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Battles use a boxed Fight / Bag / Animals / Run menu with arrow-key selection. Dialogue types onto the page and can be revealed immediately with Next. The journal is presented as a county field notebook. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals. Further captures go to clinic storage (120 spaces), so collecting can continue with a full party. The field journal records seen and registered species, and all eight species have wild encounter sites. Transfer animals at home or near Gary’s clinic; at least one conscious companion must stay with you.
+Take your school bag, explore the furnished house, and leave through its front door. The house includes a kitchen, living room, parent's room, bathroom and utility room. Gary waits **inside** the walkable research clinic. Choose a cat, dog or hamster, then approach its pen and take the actual animal with you. It becomes your following companion. Your rival is outside for the first battle.
 
-Wild animals wander between nearby clear points, pause when approached, and use the Blender idle and walk clips. Companions follow the player’s walked route through doors and around walls. A wild encounter hides its roaming duplicate, and a captured or defeated animal site rests for 90 seconds before returning.
+Mum's old phone contains Messages, Bag, Maps, Animals, the species Register, the League Guide and Settings. All four opening SMS messages are saved when they arrive, so leaving the introduction through Home preserves the conversation and starter progression. Later replies remain in Mum's chat. A separate Blender hand-and-device model frames the interface; its battle app uses boxed health meters, labelled HP bars and readable move details while animated animals fight in the 3D world in front of you.
 
-Campaign progress saves in this browser. Defeat returns you to your room with a healed party. Your bedroom and Gary offer free recovery. Earned district offices unlock travel through the journal map.
+Combat is turn based, with moves, levelling, type advantages, status effects, switching, healing and capture. Weaken conscious wild animals before throwing a carrier. A party holds six animals; further captures go to clinic storage. All eight species have wild encounter sites. Companions follow your walked route, while wild animals wander nearby.
 
-## Current status
+Mercy General Stores has a walkable interior and an unattended supply counter. Collect carriers and medkits there at lower prices than phone delivery. Home and the clinic provide free recovery. Maps unlocks travel to earned district destinations, and home/clinic bus travel after the first badge. Defeat returns you home with a treated party. Eight badges lead to a four-round county championship and an ending.
 
-This is an actively developed playable build, not a finished photorealistic release. The bedroom and first two districts have received the most detailed art passes. Old School Road has textured soil, animated grass verges, loose gravel, weathered stone boundaries, animated oaks, brambles, bus shelter, crossing and a separate county school asset and an animated crossing guard. Ash End has a modular lettings office, three-storey tenement wings, iron railings, a paved battle courtyard, tenant notices and an animated Landlord with property keys and an inspection clipboard. Its roadside sign promises “A PLACE TO PAY FOR”; its notices exempt the landlord's animals from his own no-pets rule. The 1.2 km square region has roads, encounter sites, eight district destinations, and a complete campaign progression system; its later districts still reuse architecture and need more individual environments. Human faces, animal deformation, terrain variety, and interactions inside additional buildings remain art and design priorities.
+## The county
 
-Verified in the browser:
+The 1.2 × 1.2 km region has eight distinct district environments assembled from reusable Blender assets:
 
-- A fresh save: bedroom → letter → both doors → clinic → starter → rival victory.
-- A post-first-badge save fixture: walk from the school along the road to Ash End, enter the courtyard and defeat the Landlord using a level 9 cat and finite supplies, without overriding combat randomness. This is a progression check, not a statistical balance guarantee.
-- Save-fixture regression scenarios: weakened wild capture, full-party capture into storage, clinic-only transfers, persistent species records, inventory consumption, party persistence across reload, defeat and recovery, and the final multi-animal championship round through the ending and return home.
-- All eight animal exports: idle, walk, attack, hit, and faint clips, with skeletal skins and visual contact sheets.
+| District     | Leader                 | Environment                                            |
+| ------------ | ---------------------- | ------------------------------------------------------ |
+| Wickmere     | The Crossing Guard     | School road, bus shelter, crossing and county school   |
+| Ash End      | The Landlord           | Lettings office, tenements and a housing courtyard     |
+| Briarfield   | The Groundskeeper      | Lodge, glasshouse and horticultural grounds            |
+| North Drain  | The Sanitation Officer | Pump station, brick drainage channels and footbridge   |
+| Blackwood    | The Ranger             | Forest edge, ranger lodge, timber gate and culvert     |
+| Morrow Quay  | The Harbourmaster      | Harbour office, quay, water basin, pier and boat       |
+| St. Marrow   | The Headteacher        | School block, gates, sports courts and bicycle shelter |
+| Hollow Crown | The League Inspector   | Inspection office, barriers and surveillance           |
 
-The ending scenario uses a late-game save fixture. It is not a claim that the entire campaign has been manually played from a fresh save.
-
-![Ash End lettings office and modular housing courtyard](docs/ash-end.png)
+Connecting roads use modular surfaces, subtle paint, asphalt repairs, shallow scars and manholes. Residential lanes connect house rows and doorsteps. Separate utility poles and sagging cable spans follow the roads. Hills, embankments, natural pine variants, oaks, birches with revised bark and verge plants shape the countryside. Terrain heights come from the Blender meshes; roads and building foundations retain level ground. Institutional notices carry the joke through the bleak, rainy setting.
 
 ## Controls
 
-| Action | Control |
-| --- | --- |
-| Walk / sprint | WASD / Shift |
-| Look | Mouse; click the world to lock the pointer |
-| Release pointer | Escape |
-| Look fallback | Drag or arrow keys |
-| Interact | E |
-| Torch | F |
-| Journal, map, party, settings | J |
+| Action             | Control                                    |
+| ------------------ | ------------------------------------------ |
+| Walk / sprint      | WASD / Shift                               |
+| Look               | Mouse look; drag or arrow keys as fallback |
+| Release mouse look | Escape                                     |
+| Interact           | E                                          |
+| Torch              | F                                          |
+| Open phone apps    | J                                          |
+| Switch phone apps  | Phone Home and Back buttons                |
 
-Graphics, brightness, sensitivity, and camera movement are adjustable and saved separately from campaign progress. Mobile has touch controls and defaults to the performance setting; the intended experience is on desktop.
+Brightness, graphics quality, sensitivity and camera movement preferences save separately from the campaign. Touch controls are included; desktop remains the intended experience.
 
-## Blender asset pipeline
+## Run locally
 
-The active build contains **88 individual GLB assets plus a Blender-rendered HDR sky and a Blender-authored interface paper texture**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
-
-- `assets/`: separate `.blend` sources with packed images. Open a single tree, chair, door, animal, road segment, or building and edit it directly.
-- `game-assets/asset-catalog.json`: the source/export mapping and local collision dimensions.
-- `game-assets/bedroom-layout.json`: placement data for separate furnishings.
-- `src/world.js`: placement and spatial batching of the exported modules. It does not generate world mesh primitives.
-- `src/route-one.js` and `src/ash-end.js`: independent district layouts, assembled from catalog-listed Blender modules.
-- `src/main.js`: first-person input, lighting, animation playback, encounters, battle presentation, UI, audio, and saves.
-- `src/rules.js`: combat, progression definitions, and save validation.
-- `assets/field-paper.blend`: editable stationery material; `scripts/author_interface_paper.py` exports the packed texture used by the game interface.
-
-To export **one edited asset** with Blender on your PATH:
-
-```sh
-blender -b --python scripts/reexport_asset.py -- desk
-```
-
-The source authoring scripts support independent passes. For example, to rebuild only the cat:
-
-```sh
-blender -b --python scripts/author_animals.py -- cat
-blender -b --python scripts/refine_animals.py -- cat
-blender -b --python scripts/coat_materials.py -- cat
-```
-
-`author_blender.py` and `modular_assets.py` are the initial library factories. `detail_assets.py`, `refine_people.py`, and `author_sky.py` are subsequent Blender art passes. `pack_sources.py` packs used images and compresses the editable sources. A normal art edit only requires re-exporting its own file; the world is assembled from those reusable pieces.
-
-The production build copies only catalog-listed assets and the sky manifest. Historical files under `public/`, working texture folders, and the unused monolithic bedroom export are not served or shipped.
-
-## Run and verify
-
-Node 22 or newer:
+With Node 22 or newer:
 
 ```sh
 npm ci
 npm run dev -- --port 5174
 ```
 
-In a second terminal:
+Open `http://127.0.0.1:5174`. Campaign progress and messages are stored in that browser. GitHub Actions tests and builds `main`, then deploys `dist/` to GitHub Pages.
+
+## Blender asset pipeline
+
+The current catalog contains **167 individual GLB assets**, alongside a Blender-rendered HDR sky and a Blender-authored interface paper texture. World models, material images and character animations originate in editable Blender sources. Three.js places, batches, lights and plays those exports; it does not construct scenery from runtime primitives.
+
+- `assets/`: separate `.blend` sources with packed images. Edit a road, tree, room fixture, building or character independently.
+- `game-assets/asset-catalog.json`: source/export mapping, collision dimensions and terrain metadata. `bedroom-layout.json` positions the separate bedroom furnishings.
+- `game-assets/texture-hashes.json`: generated hashes of exported image payloads. The loader verifies these before sharing identical Three.js texture sources; different texture settings remain separate. Nearby textures are uploaded incrementally before play. This does not remove the original downloads or image decoding work.
+- `scripts/author_*.py` and focused Blender passes: individual assets or small kits. `scripts/reexport_asset.py` exports an edited source and refreshes its terrain samples where applicable.
+- `src/world.js`, district modules, `home-clinic.js`, `corner-shop.js`, `residential-streets.js` and `utility-lines.js`: world assembly. `src/terrain.js` samples the exported ground triangles.
+- `src/main.js`, `rules.js`, `animal-motion.js` and phone modules: exploration, combat, progression, animation playback, messages and saves.
+
+Blender 5.2 is used for the source files. With Blender on your PATH, re-export one edited asset, then regenerate the image hashes before testing or building:
+
+```sh
+blender -b --python-exit-code 1 --python scripts/reexport_asset.py -- desk
+node -e "require('node:fs').mkdirSync('artifacts', { recursive: true })"
+node scripts/audit-asset-textures.mjs --write
+```
+
+Repeat hash generation after any GLB re-export or catalog change, and include the refreshed manifest with the exports. The production build copies catalog-listed models, the layout/lighting/hash manifests and the lighting manifest's sky. Working renders and audit scratch files stay in ignored `artifacts/`. Dependency licences are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Verification and development status
+
+This is an active development build. The latest completed checks are **121 passing unit/geometry tests**, a **successful final 167-asset Blender source audit**, **41 passing final no-input integration assertions**, a **successful production build**, and **21 semantic world views plus nine repeat views after interior-lighting corrections**. The image-hash manifest has been regenerated for the final exports, and the final battle screenshot confirms that the phone, HP panels and commands fit. Six final focused world views passed capture validation after the leader-lighting, lodge-fascia and puddle changes. See [the rebuild verification record](docs/rebuild-verification.md) for evidence and remaining limitations.
+
+**Walked traversal, a fresh campaign from beginning to ending, and physical mobile hardware have not been validated for this rebuilt version.** The browser checks use explicit position/save fixtures and direct business functions with input capture suppressed. They verify selected logic and views, without establishing that every route, interaction or camera angle is polished.
+
+Performance observations remain mixed: the 21-view pass recorded an unexplained **599.9 ms frame interval** in the utility room. Nine corrected-lighting retry views reached a maximum settled interval of **16.9 ms**, but **586 ms and 290 ms arrival Long Tasks** occurred outside those settled measurement windows. These headless workstation results do not establish hitch-free play or mobile performance.
+
+Automated coverage includes combat and progression rules, saves and messages, animal movement, source/export mappings, roads and housing, leader battle clearances, home/clinic/shop access, residential paths, terrain grounding and road-detail heights.
 
 ```sh
 npm test
-node scripts/opening-playtest.mjs --route-one
-node scripts/second-district-check.mjs
-node scripts/ash-end-visual-check.mjs
-node scripts/campaign-scenarios.mjs
-node scripts/animal-visual-check.mjs
-node scripts/interface-check.mjs
-node scripts/battle-interface-check.mjs
-node scripts/animal-motion-check.mjs
-node scripts/opening-playtest.mjs --animal-motion
 npm run build
+blender -b --python-exit-code 1 --python scripts/audit_sources.py
 ```
 
-The browser scripts use Playwright with the locally installed Microsoft Edge channel and write screenshots to ignored `artifacts/`. Their input helpers use ordinary pointer and keyboard events; the game's development inspection API is read-only and is removed from production builds.
+The Blender audit checks editable geometry, packed images and terrain metadata, writes `docs/asset-audit.json`, and prints `SOURCE_AUDIT_PASSED` on success.
 
-GitHub Actions tests and builds `main`, then deploys `dist/` to GitHub Pages. The game uses Three.js and Vite. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The optional browser integration harness remains dormant unless explicitly enabled. With the development server on port 5174 and Microsoft Edge installed:
+
+```sh
+node scripts/no-input-integration.mjs --run
+```
+
+It opens an isolated headless browser and invokes game functions through a temporary test bridge, without mouse, keyboard or pointer-lock input. The completed 41-assertion run includes the opening SMS/bag/starter sequence, a finite-supply rival victory, purchases, phone navigation and save/load. Direct target callbacks bypass line-of-sight interaction selection. Reports and screenshots go to `artifacts/`, including `no-input-integration.json`. Running without `--run` starts no browser.
+
+The separate `scripts/no-input-world-review.mjs --run` harness captures named semantic views with two seconds to settle and three seconds of frame observations per view. Freeze runtime source files during a capture; navigation or hot reload invalidates that run. Results are local diagnostics, not a campaign completion claim.
 
 ## License
 
-Original code, Blender assets, textures, and authored animations are released under the [MIT license](LICENSE), credited to **SamGCoder**. This is an independent parody with original characters, locations, writing, and assets.
+Original code, Blender assets, textures and authored animations are released under the [MIT license](LICENSE), credited to **SamGCoder**. This is an independent parody with original characters, locations, writing and assets.

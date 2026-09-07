@@ -23,12 +23,18 @@
         <h1>ORDINARY<br /><em>ANIMALS</em></h1>
         <div class="edition-stamp">NO SUPERVISION EDITION</div>
         <p>
-          You’re ten years old.<br />There’s a letter on your desk.<br />Apparently,
-          that makes this legal.
+          You’re ten years old.<br />Mum has sent you a message.<br />The league
+          has sent you its terms.
         </p>
-        <button id="begin" disabled>
-          PREPARING YOUR ROOM <span id="progress">0%</span></button
-        ><small>A FIRST-PERSON ANIMAL-BATTLING PARODY</small>
+        <div class="title-menu" aria-label="Main menu">
+          <button id="begin" disabled>NEW GAME</button>
+          <button id="load-game" disabled>LOAD GAME</button>
+          <button id="title-settings">SETTINGS</button>
+        </div>
+        <p id="save-summary">No journey recorded.</p>
+        <small id="loading-status" role="status"
+          >PREPARING YOUR ROOM <span id="progress">0%</span></small
+        >
       </div>
       <div class="title-right">
         NO MAGIC.<br />NO SUPERVISION.<br />JUST ANIMALS.
@@ -41,11 +47,11 @@
     <div id="hud" hidden>
       <div class="topline">
         <span id="location">YOUR BEDROOM</span><span id="clock">05:17</span
-        ><button id="menu-btn">JOURNAL <kbd>J</kbd></button>
+        ><button id="menu-btn">PHONE <kbd>J</kbd></button>
       </div>
       <div id="objective">
-        <span>GARY’S INSTRUCTIONS</span>
-        <p id="objective-text">Read the letter on your desk.</p>
+        <span>MUM / UNREAD MESSAGE</span>
+        <p id="objective-text">Read Mum's message on your phone.</p>
       </div>
       <div id="crosshair"></div>
       <div id="interact" hidden>
@@ -75,6 +81,53 @@
     </div>
     <div id="toast" role="status"></div>
     <div id="fade"></div>
+    <section id="registration" class="overlay" hidden>
+      <form id="registration-form" class="registration-box">
+        <div class="eyebrow">COUNTY LEAGUE / NEW APPLICANT</div>
+        <h2>First, your name.</h2>
+        <p>
+          You're ten. The form says “responsible adult”. Gary says to cross that
+          out.
+        </p>
+        <label
+          >Your name
+          <input
+            id="player-name"
+            maxlength="16"
+            value="Alex"
+            autocomplete="off"
+            required
+        /></label>
+        <label
+          >Your rival's name
+          <input
+            id="rival-name"
+            maxlength="16"
+            value="Robin"
+            autocomplete="off"
+            required
+        /></label>
+        <p class="form-note">
+          Your neighbour. Same age. Somehow already your competition.
+        </p>
+        <label id="overwrite-row" hidden
+          ><input id="overwrite-save" type="checkbox" /> Replace my existing
+          journey with this new game.</label
+        >
+        <div class="form-actions">
+          <button type="button" id="registration-back">BACK</button
+          ><button type="submit">BEGIN JOURNEY ▼</button>
+        </div>
+      </form>
+    </section>
+    <section id="settings-panel" class="overlay" hidden>
+      <div class="settings-box">
+        <div class="eyebrow">OPTIONS / THE ADULTS LEFT THESE TO YOU TOO</div>
+        <h2>SETTINGS</h2>
+        <div id="settings-controls"></div>
+        <button id="settings-close">BACK ▼</button>
+      </div>
+    </section>
     <section id="dialogue" class="overlay" hidden>
       <div class="dialogue-box">
         <div class="eyebrow" id="speaker">A LETTER FROM HOME</div>
@@ -85,7 +138,7 @@
     <section id="choose" class="overlay" hidden>
       <div class="choice-box">
         <div class="eyebrow">COUNTY ANIMAL RESEARCH / INTAKE 001</div>
-        <h2>Choose your responsibility.</h2>
+        <h2>Which animal will you take?</h2>
         <p>
           “They’re all perfectly ordinary animals. Try not to make this weird.”
         </p>
@@ -94,17 +147,17 @@
             <span>01 / FELINE</span>
             <h3>Cat</h3>
             <p>Fast. Precise. Already disappointed in you.</p>
-            <small>SCRATCH · BITE · HISS · POUNCE</small></button
+            <small>FELINE · QUICK ATTACKER</small></button
           ><button data-starter="dog">
             <span>02 / CANINE</span>
             <h3>Dog</h3>
             <p>Strong. Loyal. Has not read the waiver.</p>
-            <small>BITE · BODY CHECK · GROWL · HOWL</small></button
+            <small>CANINE · DURABLE COMPANION</small></button
           ><button data-starter="hamster">
             <span>03 / RODENT</span>
             <h3>Hamster</h3>
             <p>Small. Resourceful. A deeply unreasonable choice.</p>
-            <small>NIBBLE · WHEEL RUSH · POCKET SAND</small>
+            <small>RODENT · FAST DISRUPTION</small>
           </button>
         </div>
       </div>
@@ -154,14 +207,20 @@
     <section id="journal" class="overlay" hidden>
       <div class="journal-box">
         <button class="close" id="close-journal">×</button>
-        <div class="eyebrow">PROPERTY OF A TEN-YEAR-OLD</div>
-        <h2>FIELD NOTES</h2>
+        <div class="eyebrow" id="journal-owner">PROPERTY OF A TEN-YEAR-OLD</div>
+        <h2>YOUR PHONE</h2>
         <div class="journal-tabs">
-          <button data-tab="map">REGION MAP</button
-          ><button data-tab="party">YOUR ANIMALS</button
-          ><button data-tab="register">SPECIES REGISTER</button
-          ><button data-tab="guide">FIELD MANUAL</button>
+          <button data-tab="apps">HOME</button
+          ><button data-tab="map">MAPS</button
+          ><button data-tab="party">ANIMALS</button
+          ><button data-tab="bag">BAG</button
+          ><button data-tab="contacts">CONTACTS</button
+          ><button data-tab="register">REGISTER</button
+          ><button data-tab="guide">HELP</button>
         </div>
+        <div id="tab-apps"></div>
+        <div id="tab-contacts" hidden></div>
+        <div id="tab-bag" hidden></div>
         <div id="tab-map">
           <canvas
             id="map"
@@ -179,7 +238,7 @@
             WASD moves. Mouse looks. Click the world to capture the mouse;
             Escape releases it. If your browser blocks mouse capture, drag to
             look or use the arrow keys. Shift sprints. F toggles your torch. E
-            interacts. J opens this journal.
+            interacts. J opens your phone. Use Home to switch apps.
           </p>
           <p>
             Battle animals using their moves. Canines have an advantage over
@@ -191,10 +250,13 @@
             Use medkits or switch to another animal when needed. Captured
             animals join your party (maximum six); further captures go to Gary’s
             clinic storage. Transfer stored animals through Your Animals while
-            at home or near Gary. The species register keeps your discoveries
+            at home or near Gary. The Register app keeps your discoveries
             even when animals are in storage. Return home or visit Gary to
             restore your party for free. If your entire party faints, you wake
             up at home.
+          </p>
+          <p>
+            Animals learn skills as they gain levels. The Animals app lets you equip four learned moves. At levels 10 and 20, they mature into adult and veteran stages of the same real species.
           </p>
           <p>
             Defeat the eight district leaders in order. Each badge permits
@@ -234,6 +296,7 @@
               movement</label
             >
           </div>
+          <button id="journal-settings">SETTINGS</button>
           <button id="reset">RESET THIS SAVE</button>
           <div id="reset-confirm" hidden>
             This permanently clears this browser’s campaign.

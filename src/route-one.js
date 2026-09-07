@@ -50,7 +50,7 @@ export function buildRouteOne({ place, lamp }) {
       if (i % 3 === 0) {
         const tx = x + nx * side * (14 + (i % 2) * 3),
           tz = z + nz * side * (14 + (i % 2) * 3);
-        if (!openEncounter(tx, tz))
+        if (!openEncounter(tx, tz) && Math.abs(tz - 20) > 7)
           place("oak-tree", tx, tz, 0, i * 0.7, 0.85 + (i % 4) * 0.07, false);
       }
       if (i % 2 === 0 && i > 4 && i < 19 && !openEncounter(bx, bz))
@@ -79,7 +79,7 @@ export function buildRouteOne({ place, lamp }) {
   for (const x of [-107, -79])
     for (const z of [56, 52, 48, 44, 40])
       place("stone-wall-4m", x, z, 0, Math.PI / 2);
-  for (let z = 52; z <= 82; z += 2) place("path-2m", -93, z, 0, 0, 1.6);
+  for (let z = 52; z <= 82; z += 2) place("path-2m", -93, z, 0, 0, 1.6, true, 1 / 1.6);
   place("notice-board", -99, 50.1, 0.25);
   for (const [x, z, s] of [
     [-110, 42, 1.1],

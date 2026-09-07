@@ -18,6 +18,7 @@ export default defineConfig({
           "asset-catalog.json",
           "bedroom-layout.json",
           "world-lighting.json",
+          "texture-hashes.json",
           lighting.environment,
           ...Object.values(catalog).map((a) => a.model),
         ]) {

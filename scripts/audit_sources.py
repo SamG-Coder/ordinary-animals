@@ -1,12 +1,16 @@
 """Read-only audit: each exported asset has a usable standalone Blender scene and packed images."""
-import bpy,json
+import bpy,json,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/'scripts'))
+from terrain_metadata import ground_surface
 catalog=json.loads((ROOT/'game-assets'/'asset-catalog.json').read_text())
 report=[]
 for name,entry in catalog.items():
  bpy.ops.wm.open_mainfile(filepath=str(ROOT/entry['source']))
  scene=bpy.context.scene
+ if entry.get('groundSurface'):
+  assert entry['groundSurface']==ground_surface(scene),f'{name}: ground samples disagree with Blender source'
  meshes=[o for o in scene.objects if o.type in ['MESH','CURVE','FONT']]
  assert meshes,f'{name}: no editable scene geometry'
  images=[im for im in bpy.data.images if im.users and im.source=='FILE']

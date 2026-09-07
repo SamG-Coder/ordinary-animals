@@ -1,5 +1,5 @@
 {
-  "assetCount": 88,
+  "assetCount": 167,
   "assets": [
     {
       "asset": "bed",
@@ -282,43 +282,11 @@
       "armatures": 0
     },
     {
-      "asset": "window-exterior",
-      "source": "assets/window-exterior.blend",
-      "model": "models/window-exterior.glb",
-      "editableObjects": 8,
-      "packedImages": 2,
-      "armatures": 0
-    },
-    {
       "asset": "porch-step",
       "source": "assets/porch-step.blend",
       "model": "models/porch-step.glb",
       "editableObjects": 1,
       "packedImages": 2,
-      "armatures": 0
-    },
-    {
-      "asset": "terrace-house",
-      "source": "assets/terrace-house.blend",
-      "model": "models/terrace-house.glb",
-      "editableObjects": 46,
-      "packedImages": 6,
-      "armatures": 0
-    },
-    {
-      "asset": "clinic-building",
-      "source": "assets/clinic-building.blend",
-      "model": "models/clinic-building.glb",
-      "editableObjects": 28,
-      "packedImages": 6,
-      "armatures": 0
-    },
-    {
-      "asset": "league-building",
-      "source": "assets/league-building.blend",
-      "model": "models/league-building.glb",
-      "editableObjects": 28,
-      "packedImages": 6,
       "armatures": 0
     },
     {
@@ -362,43 +330,11 @@
       "armatures": 0
     },
     {
-      "asset": "ground-mound-40m",
-      "source": "assets/ground-mound-40m.blend",
-      "model": "models/ground-mound-40m.glb",
-      "editableObjects": 1,
-      "packedImages": 3,
-      "armatures": 0
-    },
-    {
-      "asset": "pine-1",
-      "source": "assets/pine-1.blend",
-      "model": "models/pine-1.glb",
-      "editableObjects": 361,
-      "packedImages": 2,
-      "armatures": 0
-    },
-    {
-      "asset": "pine-2",
-      "source": "assets/pine-2.blend",
-      "model": "models/pine-2.glb",
-      "editableObjects": 361,
-      "packedImages": 2,
-      "armatures": 0
-    },
-    {
-      "asset": "pine-3",
-      "source": "assets/pine-3.blend",
-      "model": "models/pine-3.glb",
-      "editableObjects": 361,
-      "packedImages": 2,
-      "armatures": 0
-    },
-    {
       "asset": "birch",
       "source": "assets/birch.blend",
       "model": "models/birch.glb",
       "editableObjects": 61,
-      "packedImages": 2,
+      "packedImages": 5,
       "armatures": 0
     },
     {
@@ -437,16 +373,8 @@
       "asset": "utility-pole",
       "source": "assets/utility-pole.blend",
       "model": "models/utility-pole.glb",
-      "editableObjects": 2,
-      "packedImages": 4,
-      "armatures": 0
-    },
-    {
-      "asset": "wire-span-16m",
-      "source": "assets/wire-span-16m.blend",
-      "model": "models/wire-span-16m.glb",
-      "editableObjects": 2,
-      "packedImages": 0,
+      "editableObjects": 46,
+      "packedImages": 9,
       "armatures": 0
     },
     {
@@ -478,7 +406,7 @@
       "source": "assets/puddle.blend",
       "model": "models/puddle.glb",
       "editableObjects": 1,
-      "packedImages": 0,
+      "packedImages": 3,
       "armatures": 0
     },
     {
@@ -701,8 +629,712 @@
       "asset": "landlord",
       "source": "assets/landlord.blend",
       "model": "models/landlord.glb",
-      "editableObjects": 97,
+      "editableObjects": 24,
       "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "road-bank-24m",
+      "source": "assets/road-bank-24m.blend",
+      "model": "models/road-bank-24m.glb",
+      "editableObjects": 1,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "meadow-rise-40m",
+      "source": "assets/meadow-rise-40m.blend",
+      "model": "models/meadow-rise-40m.glb",
+      "editableObjects": 1,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "moor-ridge-80m",
+      "source": "assets/moor-ridge-80m.blend",
+      "model": "models/moor-ridge-80m.glb",
+      "editableObjects": 1,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "groundskeeper-lodge",
+      "source": "assets/groundskeeper-lodge.blend",
+      "model": "models/groundskeeper-lodge.glb",
+      "editableObjects": 481,
+      "packedImages": 9,
+      "armatures": 0
+    },
+    {
+      "asset": "weathered-glasshouse",
+      "source": "assets/weathered-glasshouse.blend",
+      "model": "models/weathered-glasshouse.glb",
+      "editableObjects": 171,
+      "packedImages": 7,
+      "armatures": 0
+    },
+    {
+      "asset": "iron-estate-gate",
+      "source": "assets/iron-estate-gate.blend",
+      "model": "models/iron-estate-gate.glb",
+      "editableObjects": 106,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "raised-growing-bed",
+      "source": "assets/raised-growing-bed.blend",
+      "model": "models/raised-growing-bed.glb",
+      "editableObjects": 25,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "briarfield-grounds-notice",
+      "source": "assets/briarfield-grounds-notice.blend",
+      "model": "models/briarfield-grounds-notice.glb",
+      "editableObjects": 22,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "room-window-4m",
+      "source": "assets/room-window-4m.blend",
+      "model": "models/room-window-4m.glb",
+      "editableObjects": 19,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "domestic-tile-floor-4m",
+      "source": "assets/domestic-tile-floor-4m.blend",
+      "model": "models/domestic-tile-floor-4m.glb",
+      "editableObjects": 101,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "kitchen-counter",
+      "source": "assets/kitchen-counter.blend",
+      "model": "models/kitchen-counter.glb",
+      "editableObjects": 33,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "kitchen-fridge",
+      "source": "assets/kitchen-fridge.blend",
+      "model": "models/kitchen-fridge.glb",
+      "editableObjects": 12,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "family-sofa",
+      "source": "assets/family-sofa.blend",
+      "model": "models/family-sofa.glb",
+      "editableObjects": 22,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "home-dining-table",
+      "source": "assets/home-dining-table.blend",
+      "model": "models/home-dining-table.glb",
+      "editableObjects": 11,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "home-crt-tv",
+      "source": "assets/home-crt-tv.blend",
+      "model": "models/home-crt-tv.glb",
+      "editableObjects": 16,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "family-photo",
+      "source": "assets/family-photo.blend",
+      "model": "models/family-photo.glb",
+      "editableObjects": 10,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "bathroom-basin",
+      "source": "assets/bathroom-basin.blend",
+      "model": "models/bathroom-basin.glb",
+      "editableObjects": 12,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "bathroom-toilet",
+      "source": "assets/bathroom-toilet.blend",
+      "model": "models/bathroom-toilet.glb",
+      "editableObjects": 8,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "bathroom-tub",
+      "source": "assets/bathroom-tub.blend",
+      "model": "models/bathroom-tub.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "research-bench",
+      "source": "assets/research-bench.blend",
+      "model": "models/research-bench.glb",
+      "editableObjects": 39,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "starter-pen",
+      "source": "assets/starter-pen.blend",
+      "model": "models/starter-pen.glb",
+      "editableObjects": 28,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "clinic-entry-sign",
+      "source": "assets/clinic-entry-sign.blend",
+      "model": "models/clinic-entry-sign.glb",
+      "editableObjects": 3,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "interior-ceiling-light",
+      "source": "assets/interior-ceiling-light.blend",
+      "model": "models/interior-ceiling-light.glb",
+      "editableObjects": 4,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "groundskeeper",
+      "source": "assets/groundskeeper.blend",
+      "model": "models/groundskeeper.glb",
+      "editableObjects": 29,
+      "packedImages": 12,
+      "armatures": 0
+    },
+    {
+      "asset": "held-phone",
+      "source": "assets/held-phone.blend",
+      "model": "models/held-phone.glb",
+      "editableObjects": 13,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-wickmere",
+      "source": "assets/waymarker-wickmere.blend",
+      "model": "models/waymarker-wickmere.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-ash-end",
+      "source": "assets/waymarker-ash-end.blend",
+      "model": "models/waymarker-ash-end.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-briarfield",
+      "source": "assets/waymarker-briarfield.blend",
+      "model": "models/waymarker-briarfield.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-north-drain",
+      "source": "assets/waymarker-north-drain.blend",
+      "model": "models/waymarker-north-drain.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-blackwood",
+      "source": "assets/waymarker-blackwood.blend",
+      "model": "models/waymarker-blackwood.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-morrow-quay",
+      "source": "assets/waymarker-morrow-quay.blend",
+      "model": "models/waymarker-morrow-quay.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-st-marrow",
+      "source": "assets/waymarker-st-marrow.blend",
+      "model": "models/waymarker-st-marrow.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "waymarker-hollow-crown",
+      "source": "assets/waymarker-hollow-crown.blend",
+      "model": "models/waymarker-hollow-crown.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "pump-station",
+      "source": "assets/pump-station.blend",
+      "model": "models/pump-station.glb",
+      "editableObjects": 137,
+      "packedImages": 8,
+      "armatures": 0
+    },
+    {
+      "asset": "brick-drain-channel-4m",
+      "source": "assets/brick-drain-channel-4m.blend",
+      "model": "models/brick-drain-channel-4m.glb",
+      "editableObjects": 14,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "drainage-pipe",
+      "source": "assets/drainage-pipe.blend",
+      "model": "models/drainage-pipe.glb",
+      "editableObjects": 33,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "canal-footbridge",
+      "source": "assets/canal-footbridge.blend",
+      "model": "models/canal-footbridge.glb",
+      "editableObjects": 126,
+      "packedImages": 8,
+      "armatures": 0
+    },
+    {
+      "asset": "north-drain-notice",
+      "source": "assets/north-drain-notice.blend",
+      "model": "models/north-drain-notice.glb",
+      "editableObjects": 24,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "terrace-house-v2",
+      "source": "assets/terrace-house-v2.blend",
+      "model": "models/terrace-house-v2.glb",
+      "editableObjects": 1341,
+      "packedImages": 8,
+      "armatures": 0
+    },
+    {
+      "asset": "heather-bush",
+      "source": "assets/heather-bush.blend",
+      "model": "models/heather-bush.glb",
+      "editableObjects": 3,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "bramble-hedge3m",
+      "source": "assets/bramble-hedge3m.blend",
+      "model": "models/bramble-hedge3m.glb",
+      "editableObjects": 2,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "mossy-fallen-log3m",
+      "source": "assets/mossy-fallen-log3m.blend",
+      "model": "models/mossy-fallen-log3m.glb",
+      "editableObjects": 4,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "rotten-fence-post",
+      "source": "assets/rotten-fence-post.blend",
+      "model": "models/rotten-fence-post.glb",
+      "editableObjects": 4,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "league-inspection-office",
+      "source": "assets/league-inspection-office.blend",
+      "model": "models/league-inspection-office.glb",
+      "editableObjects": 150,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "cctv-mast",
+      "source": "assets/cctv-mast.blend",
+      "model": "models/cctv-mast.glb",
+      "editableObjects": 10,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "inspection-barrier",
+      "source": "assets/inspection-barrier.blend",
+      "model": "models/inspection-barrier.glb",
+      "editableObjects": 9,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "inspection-notice",
+      "source": "assets/inspection-notice.blend",
+      "model": "models/inspection-notice.glb",
+      "editableObjects": 11,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "ranger-lodge",
+      "source": "assets/ranger-lodge.blend",
+      "model": "models/ranger-lodge.glb",
+      "editableObjects": 336,
+      "packedImages": 8,
+      "armatures": 0
+    },
+    {
+      "asset": "timber-trail-gate",
+      "source": "assets/timber-trail-gate.blend",
+      "model": "models/timber-trail-gate.glb",
+      "editableObjects": 32,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "forest-trailboard",
+      "source": "assets/forest-trailboard.blend",
+      "model": "models/forest-trailboard.glb",
+      "editableObjects": 28,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "mossy-stone-culvert",
+      "source": "assets/mossy-stone-culvert.blend",
+      "model": "models/mossy-stone-culvert.glb",
+      "editableObjects": 51,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "sanitation-officer",
+      "source": "assets/sanitation-officer.blend",
+      "model": "models/sanitation-officer.glb",
+      "editableObjects": 34,
+      "packedImages": 10,
+      "armatures": 0
+    },
+    {
+      "asset": "ranger",
+      "source": "assets/ranger.blend",
+      "model": "models/ranger.glb",
+      "editableObjects": 33,
+      "packedImages": 14,
+      "armatures": 0
+    },
+    {
+      "asset": "harbourmaster",
+      "source": "assets/harbourmaster.blend",
+      "model": "models/harbourmaster.glb",
+      "editableObjects": 32,
+      "packedImages": 12,
+      "armatures": 0
+    },
+    {
+      "asset": "headteacher",
+      "source": "assets/headteacher.blend",
+      "model": "models/headteacher.glb",
+      "editableObjects": 31,
+      "packedImages": 10,
+      "armatures": 0
+    },
+    {
+      "asset": "league-inspector",
+      "source": "assets/league-inspector.blend",
+      "model": "models/league-inspector.glb",
+      "editableObjects": 32,
+      "packedImages": 12,
+      "armatures": 0
+    },
+    {
+      "asset": "harbour-office",
+      "source": "assets/harbour-office.blend",
+      "model": "models/harbour-office.glb",
+      "editableObjects": 9,
+      "packedImages": 10,
+      "armatures": 0
+    },
+    {
+      "asset": "stone-quay4m",
+      "source": "assets/stone-quay4m.blend",
+      "model": "models/stone-quay4m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "timber-pier4m",
+      "source": "assets/timber-pier4m.blend",
+      "model": "models/timber-pier4m.glb",
+      "editableObjects": 3,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "mooring-bollard",
+      "source": "assets/mooring-bollard.blend",
+      "model": "models/mooring-bollard.glb",
+      "editableObjects": 3,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "harbour-water-tile20m",
+      "source": "assets/harbour-water-tile20m.blend",
+      "model": "models/harbour-water-tile20m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "moored-dinghy",
+      "source": "assets/moored-dinghy.blend",
+      "model": "models/moored-dinghy.glb",
+      "editableObjects": 4,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "gathered-curtains-2m",
+      "source": "assets/gathered-curtains-2m.blend",
+      "model": "models/gathered-curtains-2m.glb",
+      "editableObjects": 4,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "sofa-wool-blanket",
+      "source": "assets/sofa-wool-blanket.blend",
+      "model": "models/sofa-wool-blanket.glb",
+      "editableObjects": 37,
+      "packedImages": 1,
+      "armatures": 0
+    },
+    {
+      "asset": "hall-coat-rack",
+      "source": "assets/hall-coat-rack.blend",
+      "model": "models/hall-coat-rack.glb",
+      "editableObjects": 17,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "unfinished-breakfast",
+      "source": "assets/unfinished-breakfast.blend",
+      "model": "models/unfinished-breakfast.glb",
+      "editableObjects": 16,
+      "packedImages": 1,
+      "armatures": 0
+    },
+    {
+      "asset": "bathroom-towel-rail",
+      "source": "assets/bathroom-towel-rail.blend",
+      "model": "models/bathroom-towel-rail.glb",
+      "editableObjects": 4,
+      "packedImages": 1,
+      "armatures": 0
+    },
+    {
+      "asset": "kitchen-pantry-tins",
+      "source": "assets/kitchen-pantry-tins.blend",
+      "model": "models/kitchen-pantry-tins.glb",
+      "editableObjects": 9,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "st-marrow-school-block",
+      "source": "assets/st-marrow-school-block.blend",
+      "model": "models/st-marrow-school-block.glb",
+      "editableObjects": 105,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "school-entrance-gates",
+      "source": "assets/school-entrance-gates.blend",
+      "model": "models/school-entrance-gates.glb",
+      "editableObjects": 50,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "school-play-court",
+      "source": "assets/school-play-court.blend",
+      "model": "models/school-play-court.glb",
+      "editableObjects": 53,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "school-bike-shelter",
+      "source": "assets/school-bike-shelter.blend",
+      "model": "models/school-bike-shelter.glb",
+      "editableObjects": 136,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "st-marrow-notice",
+      "source": "assets/st-marrow-notice.blend",
+      "model": "models/st-marrow-notice.glb",
+      "editableObjects": 16,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "pine-natural-1",
+      "source": "assets/pine-natural-1.blend",
+      "model": "models/pine-natural-1.glb",
+      "editableObjects": 702,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "pine-natural-2",
+      "source": "assets/pine-natural-2.blend",
+      "model": "models/pine-natural-2.glb",
+      "editableObjects": 702,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "pine-natural-3",
+      "source": "assets/pine-natural-3.blend",
+      "model": "models/pine-natural-3.glb",
+      "editableObjects": 716,
+      "packedImages": 3,
+      "armatures": 0
+    },
+    {
+      "asset": "corner-shopfront8m",
+      "source": "assets/corner-shopfront8m.blend",
+      "model": "models/corner-shopfront8m.glb",
+      "editableObjects": 9,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "corner-shop-counter",
+      "source": "assets/corner-shop-counter.blend",
+      "model": "models/corner-shop-counter.glb",
+      "editableObjects": 10,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "corner-shop-shelf",
+      "source": "assets/corner-shop-shelf.blend",
+      "model": "models/corner-shop-shelf.glb",
+      "editableObjects": 10,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "corner-shop-pharmacy",
+      "source": "assets/corner-shop-pharmacy.blend",
+      "model": "models/corner-shop-pharmacy.glb",
+      "editableObjects": 8,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "corner-shop-sign",
+      "source": "assets/corner-shop-sign.blend",
+      "model": "models/corner-shop-sign.glb",
+      "editableObjects": 4,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "roof-panel-4m",
+      "source": "assets/roof-panel-4m.blend",
+      "model": "models/roof-panel-4m.glb",
+      "editableObjects": 17,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "roof-eave-2m",
+      "source": "assets/roof-eave-2m.blend",
+      "model": "models/roof-eave-2m.glb",
+      "editableObjects": 6,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "roof-eave-4m",
+      "source": "assets/roof-eave-4m.blend",
+      "model": "models/roof-eave-4m.glb",
+      "editableObjects": 6,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "asphalt-repair-2m",
+      "source": "assets/asphalt-repair-2m.blend",
+      "model": "models/asphalt-repair-2m.glb",
+      "editableObjects": 4,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "shallow-road-scar-1m",
+      "source": "assets/shallow-road-scar-1m.blend",
+      "model": "models/shallow-road-scar-1m.glb",
+      "editableObjects": 6,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "cast-iron-manhole",
+      "source": "assets/cast-iron-manhole.blend",
+      "model": "models/cast-iron-manhole.glb",
+      "editableObjects": 9,
+      "packedImages": 9,
+      "armatures": 0
+    },
+    {
+      "asset": "overhead-line-24m",
+      "source": "assets/overhead-line-24m.blend",
+      "model": "models/overhead-line-24m.glb",
+      "editableObjects": 3,
+      "packedImages": 3,
       "armatures": 0
     }
   ],

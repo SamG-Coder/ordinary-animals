@@ -1,3 +1,4 @@
+import { cleanMessages } from "./phone-messages.js";
 export const SAVE_KEY = "ordinary-animals-dark-v2";
 export const RESERVE_LIMIT = 120;
 export const SPECIES = {
@@ -157,12 +158,179 @@ export const MOVES = {
     type: "rodent",
     desc: "Recovers a little HP. Counts as a turn.",
   },
+  focus: {
+    name: "Patient Stalk",
+    power: 0,
+    effect: "boost",
+    type: "feline",
+    desc: "Raises attack. The opponent still gets its turn.",
+  },
+  brace: {
+    name: "Dig In",
+    power: 0,
+    effect: "guard",
+    type: "rodent",
+    desc: "Raises defence until this battle ends. Uses a turn.",
+  },
+  rake: {
+    name: "Raking Claws",
+    power: 32,
+    accuracy: 0.95,
+    type: "feline",
+    desc: "A practised claw attack. More reliable than Pounce.",
+  },
+  charge: {
+    name: "Shoulder Charge",
+    power: 37,
+    accuracy: 0.85,
+    type: "canine",
+    desc: "A forceful charge with a real chance of missing.",
+  },
+  scurry: {
+    name: "Scramble",
+    power: 30,
+    accuracy: 1,
+    type: "rodent",
+    desc: "A reliable flurry from an experienced small animal.",
+  },
+  ambush: {
+    name: "Ambush",
+    power: 34,
+    accuracy: 0.95,
+    type: "canine",
+    desc: "A veteran fox picks its opening.",
+  },
 };
 export const TYPE_EDGE = {
   feline: "rodent",
   rodent: "canine",
   canine: "feline",
 };
+// League classes are the game's intentionally dubious taxonomy. Advantage follows
+// the move's class, not the species using it; Bite gives a cat canine coverage.
+export const TYPE_MATRIX = {
+  feline: { feline: 1, rodent: 1.3, canine: 0.8 },
+  rodent: { feline: 0.8, rodent: 1, canine: 1.3 },
+  canine: { feline: 1.3, rodent: 0.8, canine: 1 },
+};
+const LEARNSET_IDS = {
+  cat: ["scratch", "bite", "hiss", "pounce", "focus", "rake"],
+  dog: ["tackle", "bite", "growl", "howl", "brace", "charge"],
+  hamster: ["nibble", "hoard", "sand", "rush", "brace", "scurry"],
+  rat: ["nibble", "bite", "sand", "rush", "focus", "scurry"],
+  rabbit: ["tackle", "hoard", "sand", "rush", "brace", "scurry"],
+  fox: ["bite", "pounce", "growl", "howl", "focus", "ambush"],
+  raccoon: ["scratch", "hoard", "sand", "bite", "brace", "rake"],
+  goat: ["tackle", "rush", "growl", "howl", "brace", "charge"],
+};
+const ROLES = {
+  cat: "Fast feline attacker with Bite for coverage and Hiss for longer fights.",
+  dog: "Sturdy canine bruiser; slower than a cat, with stronger defence.",
+  hamster: "Quick rodent with early recovery and disruptive Pocket Sand.",
+  rat: "Fragile, very fast rodent; learns a second attack class early.",
+  rabbit: "Quick and resilient; recovery comes early, Wheel Rush at level 10.",
+  fox: "Fast canine hunter with high attack and lighter defence.",
+  raccoon: "Defensive feline with recovery and disruptive attacks.",
+  goat: "Slow, durable and strong. Rodent moves threaten it.",
+};
+for (const [id, ids] of Object.entries(LEARNSET_IDS)) {
+  SPECIES[id].moves = ids;
+  SPECIES[id].learnset = ids.map((move, i) => ({
+    move,
+    level: [1, 3, 5, 10, 18, 28][i],
+  }));
+  SPECIES[id].role = ROLES[id];
+}
+export const GROWTH_STAGES = [
+  {
+    id: "juvenile",
+    label: "Juvenile",
+    level: 1,
+    scale: 0.8,
+    statMultiplier: 0.95,
+    speedBonus: 0,
+  },
+  {
+    id: "adult",
+    label: "Adult",
+    level: 10,
+    scale: 1,
+    statMultiplier: 1,
+    speedBonus: 1,
+  },
+  {
+    id: "veteran",
+    label: "Veteran",
+    level: 20,
+    scale: 1.05,
+    statMultiplier: 1.08,
+    speedBonus: 2,
+  },
+];
+export function growthFor(animal) {
+  const stage =
+    GROWTH_STAGES.findLast((s) => animal.level >= s.level) ?? GROWTH_STAGES[0];
+  return {
+    ...stage,
+    nextLevel: GROWTH_STAGES.find((s) => s.level > animal.level)?.level ?? null,
+  };
+}
+export function battleStats(animal) {
+  const species = SPECIES[animal.species];
+  if (!Object.hasOwn(SPECIES, animal.species))
+    throw new Error("Unknown species");
+  const growth = growthFor(animal);
+  return {
+    maxHp: Math.round((species.hp + animal.level * 4) * growth.statMultiplier),
+    attack: (species.attack + animal.level * 2) * growth.statMultiplier,
+    defense: (species.defense + animal.level) * growth.statMultiplier,
+    speed: species.speed + animal.level + growth.speedBonus,
+  };
+}
+export function learnedMoves(animal) {
+  if (!Object.hasOwn(SPECIES, animal.species)) return [];
+  return SPECIES[animal.species].learnset
+    .filter((s) => s.level <= animal.level)
+    .map((s) => s.move);
+}
+export function unlockedMoves(animal) {
+  const learned = learnedMoves(animal);
+  const selected = Array.isArray(animal.moves)
+    ? [...new Set(animal.moves.filter((id) => learned.includes(id)))].slice(
+        0,
+        4,
+      )
+    : [];
+  return selected.length ? selected : learned.slice(-4);
+}
+export function setMoveLoadout(animal, ids) {
+  const learned = learnedMoves(animal);
+  if (
+    !Array.isArray(ids) ||
+    ids.length < 1 ||
+    ids.length > 4 ||
+    new Set(ids).size !== ids.length ||
+    ids.some((id) => !learned.includes(id))
+  )
+    throw new Error("Choose one to four distinct learned moves");
+  if (!ids.some((id) => MOVES[id].power))
+    throw new Error("Keep at least one damaging move");
+  return { ...animal, moves: [...ids] };
+}
+export function sanitizeName(value, fallback = "Alex") {
+  if (typeof value !== "string") return fallback;
+  const name = [
+    ...value
+      .normalize("NFKC")
+      .replace(/[^\p{L}\p{N} .'-]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim(),
+  ]
+    .slice(0, 18)
+    .join("")
+    .trim();
+  return name || fallback;
+}
 export const DISTRICTS = [
   {
     name: "Wickmere",
@@ -226,41 +394,75 @@ export const DISTRICTS = [
   },
 ];
 export function makeAnimal(species, level = 5, nickname) {
-  if (!SPECIES[species]) throw new Error("Unknown species");
-  const maxHp = SPECIES[species].hp + level * 4;
+  if (!Object.hasOwn(SPECIES, species)) throw new Error("Unknown species");
+  level = Number.isFinite(level)
+    ? Math.max(1, Math.min(50, Math.floor(level)))
+    : 5;
+  const maxHp = battleStats({ species, level }).maxHp;
   return {
     species,
     level,
-    nickname: nickname || SPECIES[species].name,
+    nickname: sanitizeName(nickname, SPECIES[species].name),
     hp: maxHp,
     maxHp,
     status: null,
     attackStage: 0,
+    defenseStage: 0,
+    moves: learnedMoves({ species, level }).slice(-4),
   };
 }
 export function restore(a) {
-  return { ...a, hp: a.maxHp, status: null, attackStage: 0 };
+  return { ...a, hp: a.maxHp, status: null, attackStage: 0, defenseStage: 0 };
+}
+export function gainLevels(animal, amount = 1) {
+  const level = Math.max(
+    1,
+    Math.min(
+      50,
+      animal.level +
+        (Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0),
+    ),
+  );
+  const previousStage = growthFor(animal).id;
+  const next = makeAnimal(animal.species, level, animal.nickname);
+  const learned = learnedMoves(next).filter(
+    (id) => !learnedMoves(animal).includes(id),
+  );
+  next.moves = [...new Set([...unlockedMoves(animal), ...learned])].slice(0, 4);
+  next.hp =
+    animal.hp > 0
+      ? Math.min(next.maxHp, Math.max(0, animal.hp + next.maxHp - animal.maxHp))
+      : 0;
+  const stage = growthFor(next).id;
+  return {
+    animal: next,
+    learnedMoves: learned,
+    previousStage,
+    stage,
+    stageChanged: previousStage !== stage,
+  };
+}
+function stageFactor(value = 0) {
+  const stage = Math.max(-2, Math.min(2, value));
+  return stage < 0 ? 1 / (1 - stage * 0.5) : 1 + stage * 0.4;
 }
 export function damage(attacker, defender, move, rng = Math.random) {
   const m = MOVES[move];
   if (!m) throw new Error("Unknown move");
   if (rng() > (m.accuracy || 1)) return { amount: 0, miss: true };
-  const effectiveness =
-    TYPE_EDGE[m.type] === SPECIES[defender.species].type
-      ? 1.35
-      : TYPE_EDGE[SPECIES[defender.species].type] === m.type
-        ? 0.8
-        : 1;
-  const atk =
-    (SPECIES[attacker.species].attack + attacker.level * 2) *
-    Math.max(0.5, 1 + attacker.attackStage * 0.22);
-  const def = SPECIES[defender.species].defense + defender.level;
+  const effectiveness = TYPE_MATRIX[m.type][SPECIES[defender.species].type];
+  const atk = battleStats(attacker).attack;
+  const def = battleStats(defender).defense;
+  const familiarity = m.type === SPECIES[attacker.species].type ? 1.1 : 1;
   const amount = m.power
     ? Math.max(
         3,
         Math.round(
-          (m.power * 0.55 + atk * 0.55 - def * 0.25) *
+          (((m.power * 0.55 + atk * 0.55 - def * 0.25) *
             effectiveness *
+            familiarity *
+            stageFactor(attacker.attackStage)) /
+            stageFactor(defender.defenseStage)) *
             (0.92 + rng() * 0.16),
         ),
       )
@@ -271,7 +473,7 @@ export function attack(attacker, defender, move, rng = Math.random) {
   const a = { ...attacker },
     d = { ...defender },
     m = MOVES[move];
-  if (!m || !SPECIES[a.species].moves.includes(move))
+  if (!m || !unlockedMoves(a).includes(move))
     throw new Error("Unavailable move");
   if (a.hp <= 0 || d.hp <= 0)
     return { a, d, message: "The battle is over.", amount: 0 };
@@ -305,6 +507,10 @@ export function attack(attacker, defender, move, rng = Math.random) {
     a.attackStage = Math.min(2, a.attackStage + 1);
     message += " Attack rose.";
   }
+  if (m.effect === "guard") {
+    a.defenseStage = Math.min(2, (a.defenseStage ?? 0) + 1);
+    message += " Defence rose.";
+  }
   if (m.effect === "heal") {
     const heal = Math.min(a.maxHp - a.hp, Math.round(a.maxHp * 0.24));
     a.hp += heal;
@@ -324,6 +530,12 @@ export function captureChance(a) {
 }
 export function initialSave() {
   return {
+    saveVersion: 3,
+    playerName: "Alex",
+    rivalName: "Robin",
+    bagTaken: false,
+    interactions: [],
+    messages: [],
     note: false,
     starter: null,
     party: [],
@@ -337,9 +549,9 @@ export function initialSave() {
     money: 100,
     league: 0,
     completed: false,
-    position: { x: 1, y: 1.35, z: 1.8 },
-    yaw: -0.4,
-    pitch: 0,
+    position: { x: 0, y: 1.25, z: 1.8 },
+    yaw: 0.34,
+    pitch: -0.045,
   };
 }
 export function parseSave(raw) {
@@ -347,10 +559,21 @@ export function parseSave(raw) {
     const s = JSON.parse(raw);
     if (!s || !Array.isArray(s.party)) return null;
     const clean = initialSave();
+    clean.playerName = sanitizeName(s.playerName, "Alex");
+    clean.rivalName = sanitizeName(s.rivalName, "Robin");
+    clean.messages = cleanMessages(s.messages);
+    clean.interactions = [
+      ...new Set(
+        (Array.isArray(s.interactions) ? s.interactions : []).filter(
+          (id) =>
+            typeof id === "string" && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(id),
+        ),
+      ),
+    ].slice(0, 128);
     clean.note = Boolean(s.note);
     clean.starter = Object.hasOwn(SPECIES, s.starter) ? s.starter : null;
     clean.party = s.party
-      .filter((a) => Object.hasOwn(SPECIES, a.species))
+      .filter((a) => a && Object.hasOwn(SPECIES, a.species))
       .slice(0, 6)
       .map((a) => {
         const valid = makeAnimal(
@@ -359,31 +582,51 @@ export function parseSave(raw) {
             1,
             Math.min(50, Number.isFinite(a.level) ? Math.floor(a.level) : 5),
           ),
+          a.nickname,
         );
+        const oldMax =
+          Number.isFinite(a.maxHp) && a.maxHp > 0 ? a.maxHp : valid.maxHp;
         valid.hp = Math.max(
           0,
-          Math.min(valid.maxHp, Number.isFinite(a.hp) ? a.hp : valid.maxHp),
+          Math.min(
+            valid.maxHp,
+            Number.isFinite(a.hp)
+              ? Math.round((a.hp / oldMax) * valid.maxHp)
+              : valid.maxHp,
+          ),
         );
+        const selected = unlockedMoves({ ...valid, moves: a.moves });
+        valid.moves = selected.some((id) => MOVES[id].power)
+          ? selected
+          : valid.moves;
         return valid;
       });
     if (clean.starter && !clean.party.length)
       clean.party = [makeAnimal(clean.starter)];
     if (!clean.starter && clean.party.length)
       clean.starter = clean.party[0].species;
+    clean.bagTaken =
+      typeof s.bagTaken === "boolean" ? s.bagTaken : Boolean(clean.starter);
     clean.reserve = (Array.isArray(s.reserve) ? s.reserve : [])
       .filter((a) => a && Object.hasOwn(SPECIES, a.species))
       .slice(0, RESERVE_LIMIT)
-      .map((a) =>
-        restore(
+      .map((a) => {
+        const valid = restore(
           makeAnimal(
             a.species,
             Math.max(
               1,
               Math.min(50, Number.isFinite(a.level) ? Math.floor(a.level) : 5),
             ),
+            a.nickname,
           ),
-        ),
-      );
+        );
+        const selected = unlockedMoves({ ...valid, moves: a.moves });
+        valid.moves = selected.some((id) => MOVES[id].power)
+          ? selected
+          : valid.moves;
+        return valid;
+      });
     const owned = [...clean.party, ...clean.reserve].map((a) => a.species);
     const validSpecies = (value) =>
       (Array.isArray(value) ? value : []).filter((id) =>

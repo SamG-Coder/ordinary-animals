@@ -19,17 +19,39 @@ import {
   captureChance,
   initialSave,
   parseSave,
-  terrainHeight,
   RESERVE_LIMIT,
   recordSpecies,
   collectAnimal,
   storeAnimal,
   retrieveAnimal,
+  sanitizeName as sanitiseName,
+  unlockedMoves,
+  learnedMoves,
+  setMoveLoadout,
+  growthFor,
+  battleStats,
+  gainLevels,
 } from "./rules.js";
 import "./style.css";
 import "./game-ui.css";
+import "./phone-ui.css";
+import { appendMessage } from "./phone-messages.js";
+import { mountPhone } from "./phone-ui.js";
+import { isMorrowQuayWater } from "./morrow-quay.js";
+import { HOME_CLINIC_RIVAL } from "./home-clinic.js";
+import { getBattleAdvice } from "./battle-advice.js";
+import { createHeldPhone } from "./held-phone.js";
+import {
+  createAssetTexturePool,
+  createTextureUploadQueue,
+} from "./asset-textures.js";
 import { assembleWorld } from "./world.js";
 import { FIELD_NOTES, WILD_SITES } from "./field-notes.js";
+import { createCollisionIndex, nearestLights } from "./spatial-index.js";
+import { createLookControl } from "./look-control.js";
+import { createInteractionVisibility } from "./interaction-visibility.js";
+const EYE_HEIGHT = 1.25;
+const titlePosition = new THREE.Vector3(0.15, 1.28, 1.9);
 import {
   createWander,
   updateWander,
@@ -38,6 +60,7 @@ import {
 } from "./animal-motion.js";
 const $ = (id) => document.getElementById(id),
   base = import.meta.env.BASE_URL;
+const phone = mountPhone();
 const settingsKey = "ordinary-animals-settings";
 let settings = {};
 try {
@@ -49,9 +72,10 @@ function rememberSettings() {
     localStorage.setItem(settingsKey, JSON.stringify(settings));
   } catch {}
 }
-let state;
+let state, savedCampaign;
 try {
-  state = parseSave(localStorage.getItem(SAVE_KEY)) || initialSave();
+  savedCampaign = parseSave(localStorage.getItem(SAVE_KEY));
+  state = savedCampaign || initialSave();
 } catch {
   state = initialSave();
 }
@@ -67,7 +91,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.rotation.order = "YXZ";
 const position = new THREE.Vector3(
   state.position.x ?? 0,
-  1.35,
+  EYE_HEIGHT,
   state.position.z ?? 1.8,
 );
 let yaw = state.starter ? state.yaw : 0.34,
@@ -88,6 +112,8 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+// The color pass updates shadows once; the GTAO normal pass reuses that map.
+renderer.shadowMap.autoUpdate = false;
 renderer.info.autoReset = false;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.35;
@@ -143,6 +169,11 @@ const assets = {},
   targets = [],
   keys = new Set();
 let worldInfo,
+  renderReady = false,
+  texturePool,
+  heldPhone,
+  collisionIndex,
+  interactionVisibility,
   room,
   region,
   door,
@@ -181,7 +212,30 @@ let introDone = false,
   footTimer = 0,
   partySelection = false;
 const animalGroup = new THREE.Group();
+const starterAnimals = new Map();
+let selectedStarter = null;
 scene.add(animalGroup);
+const lookControl = createLookControl({
+  isLocked: () => document.pointerLockElement === renderer.domElement,
+  request: () => renderer.domElement.requestPointerLock?.(),
+  release: () => document.exitPointerLock?.(),
+  canLook: () => playing && !modal && !battle,
+  onFallback: () => {
+    $("look-hint").textContent =
+      "CLICK THE WORLD TO RESUME LOOK · OR DRAG / ARROW KEYS";
+  },
+});
+function updatePhone() {
+  phone.update({
+    playing,
+    modal,
+    battle,
+    tab: currentTab,
+    speaker: $("speaker").textContent,
+  });
+  heldPhone?.invalidate();
+}
+updatePhone();
 function showError(error) {
   console.error(error);
   $("error").hidden = false;
@@ -189,6 +243,7 @@ function showError(error) {
     "An asset could not load. Reload to try again. " + error.message;
 }
 function save() {
+  if (!playing) return;
   state.position = { x: position.x, z: position.z };
   state.yaw = yaw;
   state.pitch = pitch;
@@ -212,7 +267,9 @@ function setupMesh(root) {
       if (o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         for (const m of mats) {
-          if (m.normalScale) m.normalScale.set(0.22, 0.22);
+          // GLTFLoader uses a negative Y component for derivative tangent maps.
+          // Preserve that handedness while limiting exaggerated surface relief.
+          if (m.normalScale) m.normalScale.clampScalar(-0.75, 0.75);
           if (m.map)
             m.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
         }
@@ -235,13 +292,20 @@ function setupMesh(root) {
 }
 function asset(name, x = 0, z = 0, scale = 1, parent = scene) {
   const root = setupMesh(clone(assets[name].scene));
-  root.position.set(x, 0, z);
+  root.position.set(x, floor(x, z), z);
   root.scale.setScalar(scale);
   parent.add(root);
   return root;
 }
 function actor(species, x, z, level = 5, hostile = false) {
-  const root = asset(species, x, z, SPECIES[species]?.scale || 1, animalGroup);
+  const root = asset(
+    species,
+    x,
+    z,
+    (SPECIES[species]?.scale || 1) * growthFor({ species, level }).scale,
+    animalGroup,
+  );
+  root.rotation.order = "YXZ";
   const mixer = new THREE.AnimationMixer(root),
     actions = {};
   for (const clip of assets[species].animations) {
@@ -267,6 +331,7 @@ function actor(species, x, z, level = 5, hostile = false) {
     trail: [],
   };
   actors.push(a);
+  groundAnimal(a);
   play(a, "Idle");
   return a;
 }
@@ -299,34 +364,54 @@ function play(a, name, once = false) {
   a.clip = name;
 }
 function floor(x, z) {
-  return 0;
+  return worldInfo?.terrain.height(x, z) ?? 0;
+}
+function groundAnimal(a) {
+  const p = a.root.position;
+  p.y = floor(p.x, p.z);
+  const dx = (floor(p.x + 0.4, p.z) - floor(p.x - 0.4, p.z)) / 0.8;
+  const dz = (floor(p.x, p.z + 0.4) - floor(p.x, p.z - 0.4)) / 0.8;
+  const angle = a.root.rotation.y;
+  a.root.rotation.x = -Math.atan(dx * Math.sin(angle) + dz * Math.cos(angle));
+  a.root.rotation.z = Math.atan(dx * Math.cos(angle) - dz * Math.sin(angle));
 }
 function collision(x, z) {
+  if (isMorrowQuayWater(x, z)) return true;
   if (Math.abs(x) > 580 || Math.abs(z) > 580) return true;
   if (!frontOpen && Math.abs(x) < 0.97 && Math.abs(z - 8) < 0.25) return true;
   if (!doorOpen && Math.abs(x) < 0.97 && Math.abs(z - 4) < 0.25) return true;
-  return worldInfo.collisions.some(
-    (c) =>
-      Math.abs(x - c.x) < c.w / 2 + 0.22 && Math.abs(z - c.z) < c.d / 2 + 0.22,
-  );
+  return collisionIndex.blocked(x, z);
 }
 function addTarget(id, x, z, name, fn, radius = 2.5, y = 0.8) {
-  const target = { id, x, z, name, fn, radius, y };
+  const target = { id, x, z, name, fn, radius, y: y + floor(x, z), height: y };
   targets.push(target);
   return target;
 }
 function setObjective() {
   let message, goal;
   if (!state.note) {
-    message = "Read the letter on your desk.";
-    goal = { x: -1.35, z: -2.6, name: "THE LETTER" };
+    message = "Open your phone and read Mum’s message.";
+    goal = { x: 0, z: 1.8, name: "MUM / UNREAD MESSAGE" };
   } else if (!state.starter) {
-    message = "Leave your room. Meet Gary at the research clinic.";
-    goal = { x: 24, z: -15, name: "GARY’S CLINIC" };
+    if (!state.bagTaken) {
+      message = "Pick up your school bag before leaving home.";
+      goal = { x: 1.25, z: 3.12, name: "YOUR BAG" };
+    } else if (selectedStarter) {
+      const a = starterAnimals.get(selectedStarter);
+      message = `Go to the ${SPECIES[selectedStarter].name.toLowerCase()} and take it with you.`;
+      goal = {
+        x: a.root.position.x,
+        z: a.root.position.z,
+        name: "YOUR FIRST ANIMAL",
+      };
+    } else {
+      message = "Enter the research clinic. Gary is waiting inside.";
+      goal = { x: 24, z: -26, name: "GARY’S CLINIC" };
+    }
   } else if (!state.wins.includes("rival")) {
     message =
       "Your neighbour has challenged you. Defeat your rival outside the clinic.";
-    goal = { x: 13, z: -9, name: "YOUR RIVAL" };
+    goal = { ...HOME_CLINIC_RIVAL, name: state.rivalName.toUpperCase() };
   } else if (state.badges.length < 8) {
     const i = DISTRICTS.findIndex((_, i) => !state.badges.includes(i)),
       t = worldInfo.towns[i];
@@ -334,12 +419,16 @@ function setObjective() {
     goal = { x: t.gymX, z: t.gymZ, name: DISTRICTS[i].name.toUpperCase() };
   } else if (!state.completed) {
     message = `Return to Gary. County championship: ${state.league}/4 rounds complete.`;
-    goal = { x: 24, z: -15, name: "COUNTY CHAMPIONSHIP" };
+    goal = { x: 24, z: -26, name: "COUNTY CHAMPIONSHIP" };
   } else {
     message = "You are an Animal Master. Your mother still expects you home.";
     goal = { x: 0, z: 2, name: "HOME" };
   }
-  $("objective-text").textContent = message;
+  if ($("objective-text").textContent !== message)
+    $("objective-text").textContent = message;
+  $("objective").firstElementChild.textContent = !state.note
+    ? "MUM / UNREAD MESSAGE"
+    : "LEAGUE APP / NEXT TASK";
   return goal;
 }
 function updateHUD() {
@@ -350,17 +439,38 @@ function updateHUD() {
   setObjective();
 }
 function open(id) {
+  if (modal === "dialogue" && id !== "dialogue") {
+    clearInterval(dialogueTimer);
+    dialogueTimer = null;
+    dialogueLines = [];
+    dialogueCallback = null;
+  }
+  if (modal && modal !== id) $(modal).hidden = true;
   modal = id;
   $(id).hidden = false;
   keys.clear();
-  document.exitPointerLock?.();
+  lookControl.suspend();
   lookDrag = false;
-  setTimeout(() => $(id).querySelector("button:not([disabled])")?.focus(), 20);
+  updatePhone();
+  setTimeout(() => {
+    if (modal !== id) return;
+    const first =
+      id === "registration"
+        ? $("player-name")
+        : $(id).querySelector("button:not([disabled])");
+    first?.focus();
+  }, 20);
 }
-function close() {
+function close(resume = true) {
+  if (modal === "dialogue" && dialogueTimer !== null) {
+    clearInterval(dialogueTimer);
+    dialogueTimer = null;
+  }
   if (modal) $(modal).hidden = true;
   modal = null;
   partySelection = false;
+  updatePhone();
+  if (resume) lookControl.resume();
 }
 function speak(speaker, lines, callback) {
   if (dialogueTimer !== null) {
@@ -399,36 +509,44 @@ function advanceDialogue() {
       }, 25);
     }
   } else {
-    close();
+    close(false);
     const cb = dialogueCallback;
     dialogueCallback = null;
     cb?.();
+    if (!modal && !battle) lookControl.resume();
   }
 }
 $("next").onclick = advanceDialogue;
-function readLetter() {
-  speak(
-    "A LETTER FROM HOME",
-    [
-      "Happy tenth birthday. Gary says you are old enough to begin your animal journey. Your bag is packed. Please remember to look both ways.",
-      "He says the league counts as education. I could not find it on the school website, but he does own a white coat.",
-      "Come home if it gets too much. Your room will be here. — Mum",
-    ],
-    () => {
-      state.note = true;
-      save();
-      updateHUD();
-    },
-  );
+function readMumMessage() {
+  const messages = [
+    `Happy tenth birthday, ${state.playerName}. I've left you my old phone. I had to go to work early. Your school bag is beside the bedroom door. Please take it before you leave. x`,
+    "Gary says you're old enough for the animal league. He says it counts as education. I couldn't find that on the school website, but he does have a white coat.",
+    "Press the little home button for your apps. Contacts lets you message me, Bag shows your supplies, Animals looks after your team, and Maps tells you where to go. The league put its battle app on there too. I didn't approve that permission.",
+    "Gary is INSIDE the research clinic. Take your bag, go through the house, and meet him there. Message me if you need me. Please look both ways. Love you. x",
+  ];
+  // Messages arrive as a thread. Leaving for Home must not erase them or block
+  // Gary after the child follows Mum's instruction to try the other apps.
+  if (!state.note)
+    messages.forEach((text) => appendMessage(state, "mum", text));
+  state.note = true;
+  save();
+  updateHUD();
+  speak("MUM · 05:16 · SMS", messages);
 }
 function talkGary() {
   if (!state.note) {
     speak("GARY / LOCAL RESEARCHER", [
-      "Your mother left a letter. You should probably read it before accepting responsibility for a living creature.",
+      "Your mother messaged you. You should probably read it before accepting responsibility for a living creature.",
     ]);
     return;
   }
   if (!state.starter) {
+    if (!state.bagTaken) {
+      speak("GARY / LOCAL RESEARCHER", [
+        "You need your bag. Your mother packed it in your room. Even this programme requires somewhere to put the emergency supplies.",
+      ]);
+      return;
+    }
     speak(
       "GARY / LOCAL RESEARCHER",
       [
@@ -482,38 +600,108 @@ function talkGary() {
 }
 for (const button of document.querySelectorAll("[data-starter]"))
   button.onclick = () => {
-    state.starter = button.dataset.starter;
-    state.party = [makeAnimal(state.starter, 5)];
-    recordSpecies(state, state.starter, true);
-    close();
-    syncCompanion();
-    save();
-    updateHUD();
-    speak("GARY / LOCAL RESEARCHER", [
-      "Your neighbour is waiting outside. He has also been entrusted with an animal. You should fight. That is how the league says children make friends.",
-      "Your field journal records the species you meet and capture. Weaken a wild animal, then throw a carrier. If you are already carrying six animals, our courier brings the next one here. Apparently that is where the supervision budget went.",
-    ]);
+    selectedStarter = button.dataset.starter;
+    close(false);
+    speak(
+      "GARY / LOCAL RESEARCHER",
+      [
+        `The ${SPECIES[selectedStarter].name.toLowerCase()}? All right. Go over to its pen and take it with you. It is a living creature, so we use a somewhat more involved process than clicking a form.`,
+        "Your bag has its carrier and supplies. Once it follows you out, responsibility transfers to the only person here who cannot legally drive.",
+      ],
+      updateHUD,
+    );
   };
-function syncCompanion() {
+function takeStarter(species) {
+  if (state.starter) return;
+  if (!state.bagTaken || !selectedStarter) {
+    talkGary();
+    return;
+  }
+  if (selectedStarter !== species) {
+    toast(
+      `You chose the ${SPECIES[selectedStarter].name.toLowerCase()}. Speak to Gary to change your choice.`,
+    );
+    return;
+  }
+  state.starter = species;
+  state.party = [makeAnimal(state.starter, 5)];
+  recordSpecies(state, state.starter, true);
+  const animal = starterAnimals.get(species);
+  animal.target.unavailable = true;
+  animal.stationary = false;
+  syncCompanion(animal);
+  selectedStarter = null;
+  save();
+  updateHUD();
+  speak("GARY / LOCAL RESEARCHER", [
+    `${state.party[0].nickname} leaves the pen and follows you. ${state.rivalName} is waiting outside with an animal too. The league says a battle is how children make friends.`,
+    "Your phone records the species you meet and capture. The battle app sends your commands; the animal performs them right in front of you. Weaken a wild animal before throwing a carrier. Apparently we had funding for an app instead of supervision.",
+  ]);
+}
+function refreshOpeningObjects() {
+  setTelevisionPower(!state.interactions.includes("home-tv-off"));
+  if (worldInfo.openingBag) worldInfo.openingBag.visible = !state.bagTaken;
+  const bagTarget = targets.find((t) => t.id === "school-bag");
+  if (bagTarget) bagTarget.unavailable = Boolean(state.bagTaken);
+  for (const [species, a] of starterAnimals) {
+    if (a === companion) continue;
+    a.removed = state.starter === species;
+    a.root.visible = !a.removed;
+    a.target.unavailable = a.removed || Boolean(state.starter);
+  }
+  const rivalTarget = targets.find((t) => t.id === "rival");
+  if (rivalTarget) rivalTarget.name = `${state.rivalName}, your rival`;
+}
+function setTelevisionPower(on) {
+  const tv = worldInfo.interiors.television;
+  if (!tv) return;
+  tv.traverse((object) => {
+    if (!object.isMesh || Array.isArray(object.material)) return;
+    const name = object.material.name;
+    if (name.startsWith("television-letters")) object.visible = on;
+    if (name.startsWith("television-screen")) {
+      if (!object.userData.tvPower) {
+        object.material = object.material.clone();
+        object.userData.tvPower = {
+          color: object.material.color.clone(),
+          emissive: object.material.emissive.clone(),
+        };
+      }
+      if (on) {
+        object.material.color.copy(object.userData.tvPower.color);
+        object.material.emissive.copy(object.userData.tvPower.emissive);
+      } else {
+        object.material.color.set(0x050708);
+        object.material.emissive.set(0);
+      }
+    }
+  });
+  const animation = actors.find((actor) => actor.root === tv);
+  if (animation) animation.mixer.timeScale = on ? 1 : 0;
+}
+function syncCompanion(existing = null) {
   if (companion) {
     animalGroup.remove(companion.root);
     actors.splice(actors.indexOf(companion), 1);
   }
   const p = state.party.find((a) => a.hp > 0) || state.party[0];
-  companion = p ? actor(p.species, position.x, position.z, p.level) : null;
+  companion = p
+    ? existing || actor(p.species, position.x, position.z, p.level)
+    : null;
   if (companion) {
-    for (const [dx, dz] of [
-      [0.8, 0.5],
-      [-0.8, 0.5],
-      [0.5, -0.8],
-      [-0.5, -0.8],
-    ]) {
-      const spot = { x: position.x + dx, z: position.z + dz };
-      if (clearSegment(position, spot, collision)) {
-        companion.root.position.set(spot.x, floor(spot.x, spot.z), spot.z);
-        break;
+    if (!existing)
+      for (const [dx, dz] of [
+        [0.8, 0.5],
+        [-0.8, 0.5],
+        [0.5, -0.8],
+        [-0.5, -0.8],
+      ]) {
+        const spot = { x: position.x + dx, z: position.z + dz };
+        if (clearSegment(position, spot, collision)) {
+          companion.root.position.set(spot.x, floor(spot.x, spot.z), spot.z);
+          break;
+        }
       }
-    }
     companion.trail.push({ x: position.x, z: position.z });
   }
 }
@@ -547,15 +735,19 @@ function enterGym(i) {
     return;
   }
   const d = DISTRICTS[i];
-  speak(d.leader.toUpperCase(), [d.quote], () =>
-    startBattle({
-      id: "gym" + i,
-      name: d.leader,
-      kind: "gym",
-      gym: i,
-      roster: d.roster,
-      level: 5 + i * 2,
-    }),
+  const advice = getBattleAdvice(state, { districtIndex: i });
+  speak(
+    d.leader.toUpperCase(),
+    [d.quote, advice.summary, ...advice.notes.slice(0, 2)],
+    () =>
+      startBattle({
+        id: "gym" + i,
+        name: d.leader,
+        kind: "gym",
+        gym: i,
+        roster: d.roster,
+        level: 5 + i * 2,
+      }),
   );
 }
 function selectActive() {
@@ -571,8 +763,10 @@ function startBattle(config) {
     blackout();
     return;
   }
-  close();
-  document.exitPointerLock?.();
+  clearTimeout(toastTimer);
+  $("toast").classList.remove("show");
+  close(false);
+  lookControl.suspend();
   keys.clear();
   battle = {
     config,
@@ -631,15 +825,15 @@ function startBattle(config) {
     state.party[active].species,
     battle.leftPosition.x,
     battle.leftPosition.z,
+    state.party[active].level,
   );
   battle.right = actor(
     battle.enemy.species,
     battle.rightPosition.x,
     battle.rightPosition.z,
+    battle.enemy.level,
   );
   faceBattleAnimals();
-  battle.left.root.position.y = floor(anchor.x, anchor.z);
-  battle.right.root.position.y = battle.left.root.position.y;
   if (companion) companion.root.visible = false;
   $("hud").hidden = true;
   $("battle").hidden = false;
@@ -659,6 +853,7 @@ function startBattle(config) {
   renderBattle();
   sound("encounter");
   $("fight-btn").focus();
+  updatePhone();
 }
 function faceBattleAnimals() {
   battle.left.root.lookAt(
@@ -671,6 +866,8 @@ function faceBattleAnimals() {
     battle.right.root.position.y,
     battle.left.root.position.z,
   );
+  groundAnimal(battle.left);
+  groundAnimal(battle.right);
 }
 function renderBattle() {
   if (!battle) return;
@@ -707,7 +904,7 @@ function renderBattle() {
       ? `CAPTURE ${Math.round(captureChance(e) * 100)}% · Lower HP and status effects improve the odds. ${state.party.length >= 6 ? "New captures go to clinic storage." : "Leave it conscious to capture it."}`
       : "LEAGUE RULES · You cannot capture another trainer’s animal.";
   $("move-buttons").replaceChildren();
-  for (const id of SPECIES[p.species].moves) {
+  for (const id of unlockedMoves(p)) {
     const m = MOVES[id],
       button = document.createElement("button");
     button.innerHTML = `<b>${m.name}</b><small>${m.type.toUpperCase()} · ${m.power ? `POWER ${m.power}` : m.effect.toUpperCase()}</small>`;
@@ -773,7 +970,9 @@ $("battle").addEventListener("keydown", (event) => {
     !battle.finished &&
     battle.menu !== "root"
   ) {
-    $("battle-back").click();
+    battle.menu = "root";
+    renderBattle();
+    $("fight-btn").focus();
     event.preventDefault();
     event.stopPropagation();
     return;
@@ -832,7 +1031,7 @@ async function perform(isPlayer, move) {
     play(target, "Idle");
 }
 function enemyMove() {
-  const moves = SPECIES[battle.enemy.species].moves;
+  const moves = unlockedMoves(battle.enemy);
   const attacks = moves.filter((m) => MOVES[m].power);
   if (
     battle.enemy.hp < battle.enemy.maxHp * 0.25 &&
@@ -844,12 +1043,12 @@ function enemyMove() {
 }
 async function turn(move) {
   if (!battle || battle.busy || battle.finished) return;
+  if (!unlockedMoves(state.party[battle.active]).includes(move)) return;
   battle.busy = true;
   renderBattle();
   const p = state.party[battle.active],
     e = battle.enemy;
-  const playerFirst =
-    SPECIES[p.species].speed + p.level >= SPECIES[e.species].speed + e.level;
+  const playerFirst = battleStats(p).speed >= battleStats(e).speed;
   if (playerFirst) {
     await perform(true, move);
     if (battle.enemy.hp > 0) await perform(false, enemyMove());
@@ -875,8 +1074,8 @@ async function resolveRound() {
         battle.enemy.species,
         battle.rightPosition.x,
         battle.rightPosition.z,
+        battle.enemy.level,
       );
-      battle.right.root.position.y = floor(battle.anchor.x, battle.anchor.z);
       faceBattleAnimals();
       $("battle-log").textContent =
         `${battle.config.name} sends out ${battle.enemy.nickname}.`;
@@ -925,15 +1124,20 @@ function winBattle(captured = false) {
       `Captured ${battle.enemy.nickname}. ${destination === "reserve" ? "Your party is full. The league courier took it to Gary’s clinic." : "It is now legally your problem."} ${state.caught.length}/${Object.keys(SPECIES).length} species registered.`;
   } else {
     state.money += c.kind === "wild" ? 25 : 120;
+    const growthMessages = [];
     state.party = state.party.map((p) => {
-      const old = p.maxHp;
-      p.level = Math.min(50, p.level + (c.kind === "wild" ? 1 : 2));
-      p.maxHp = SPECIES[p.species].hp + p.level * 4;
-      p.hp = p.hp > 0 ? Math.min(p.maxHp, p.hp + p.maxHp - old) : 0;
-      p.status = null;
-      p.attackStage = 0;
-      return p;
+      const gained = gainLevels(p, c.kind === "wild" ? 1 : 2);
+      if (gained.stageChanged)
+        growthMessages.push(
+          `${p.nickname} grew into its ${growthFor(gained.animal).label} form. The league calls this evolution.`,
+        );
+      if (gained.learnedMoves.length)
+        growthMessages.push(
+          `${p.nickname} learned ${gained.learnedMoves.map((id) => MOVES[id].name).join(", ")}. Manage moves in Animals.`,
+        );
+      return gained.animal;
     });
+    battle.growthMessages = growthMessages;
     if (c.kind === "gym") {
       state.badges.push(c.gym);
       state.party = state.party.map(restore);
@@ -960,8 +1164,11 @@ function winBattle(captured = false) {
   $("battle-continue").hidden = false;
   $("battle-continue").onclick = () => {
     const ending = state.completed && c.kind === "league";
-    endBattle();
+    const growthMessages = battle.growthMessages || [];
+    endBattle(!ending && !growthMessages.length);
     if (ending) open("ending");
+    else if (growthMessages.length)
+      speak("ANIMALS APP / GROWTH UPDATE", growthMessages);
   };
   save();
   sound("win");
@@ -973,7 +1180,7 @@ function removeActor(a) {
   const i = actors.indexOf(a);
   if (i >= 0) actors.splice(i, 1);
 }
-function endBattle() {
+function endBattle(resume = true) {
   if (!battle) return;
   removeActor(battle.left);
   removeActor(battle.right);
@@ -983,11 +1190,13 @@ function endBattle() {
   syncCompanion();
   updateHUD();
   save();
+  updatePhone();
+  if (resume) lookControl.resume();
 }
 function blackout() {
   state.party = state.party.map(restore);
   state.money = Math.max(0, state.money - 30);
-  position.set(0, 1.35, 1.8);
+  position.set(0, EYE_HEIGHT, 1.8);
   yaw = 0.34;
   pitch = -0.045;
   syncCompanion();
@@ -1005,9 +1214,9 @@ function swapAnimal(index) {
     state.party[index].species,
     battle.leftPosition.x,
     battle.leftPosition.z,
+    state.party[index].level,
   );
   battle.left.root.rotation.y = Math.PI;
-  battle.left.root.position.y = floor(battle.anchor.x, battle.anchor.z);
   faceBattleAnimals();
   renderBattle();
 }
@@ -1072,6 +1281,25 @@ $("switch-btn").onclick = () => {
 
 function buildInteractions() {
   addTarget(
+    "school-bag",
+    1.25,
+    3.12,
+    "Pick up your school bag",
+    () => {
+      if (state.bagTaken) return;
+      state.bagTaken = true;
+      refreshOpeningObjects();
+      save();
+      updateHUD();
+      speak("BAG OBTAINED", [
+        `You shoulder your school bag. Inside: ${state.carriers} folded carriers, ${state.medkits} medkits and £${state.money} that Mum left for emergencies.`,
+        "There is no lunch. Apparently battling the district leaders counts as a full school day. Open the Bag app on your phone to check your supplies.",
+      ]);
+    },
+    1.8,
+    0.45,
+  );
+  addTarget(
     "front-door",
     0,
     7.9,
@@ -1083,7 +1311,18 @@ function buildInteractions() {
     2,
     1.2,
   );
-  addTarget("letter", -1.35, -2.6, "Letter from Mum", readLetter, 2, 1);
+  addTarget(
+    "school-homework",
+    -1.35,
+    -2.6,
+    "Unfinished school worksheet",
+    () =>
+      speak("SCHOOL REMINDER", [
+        "Write about what you want to be when you grow up. The sheet is blank. The league app has already filled in Animal Master.",
+      ]),
+    1.7,
+    1,
+  );
   addTarget(
     "radio",
     -2.78,
@@ -1100,8 +1339,8 @@ function buildInteractions() {
   );
   addTarget(
     "hall-bills",
-    -1.74,
-    6,
+    -1.4,
+    7.25,
     "Unopened bills",
     () =>
       speak("FINAL REMINDER", [
@@ -1111,6 +1350,107 @@ function buildInteractions() {
     1.35,
     0.82,
   );
+  for (const item of [
+    ...worldInfo.interiors.interactions,
+    ...worldInfo.northDrain.interactions,
+    ...worldInfo.blackwood.interactions,
+    ...worldInfo.hollowCrown.interactions,
+    ...worldInfo.stMarrow.interactions,
+    ...worldInfo.briarfield.interactions,
+  ]) {
+    if (item.kind === "starter-pen") continue;
+    addTarget(
+      item.id,
+      item.x,
+      item.z,
+      item.label,
+      () => {
+        if (item.kind === "shop") {
+          showJournal("bag");
+          toast("MERCY GENERAL STORES · COLLECTION PRICES");
+          return;
+        }
+        if (item.kind === "television") {
+          const currentlyOff = state.interactions.includes("home-tv-off");
+          if (currentlyOff)
+            state.interactions = state.interactions.filter(
+              (id) => id !== "home-tv-off",
+            );
+          else state.interactions.push("home-tv-off");
+          setTelevisionPower(currentlyOff);
+          save();
+          if (currentlyOff) speak("COUNTY NEWS / TRANSCRIPT", item.lines);
+          else
+            toast(
+              "Television switched off. The adults continue making decisions elsewhere.",
+            );
+          return;
+        }
+        if (!state.interactions.includes(item.id))
+          state.interactions.push(item.id);
+        save();
+        speak(`${item.title} / OBSERVATION`, item.lines);
+      },
+      item.radius,
+      item.y ?? 0.85,
+    );
+  }
+  for (const marker of worldInfo.waymarkers) {
+    const district = DISTRICTS[marker.district];
+    addTarget(
+      `waymarker-${marker.district}`,
+      marker.x,
+      marker.z,
+      `${district.name} road sign`,
+      () =>
+        speak("COUNTY MAPS / ROADSIDE INFORMATION", [
+          `${district.name}. ${district.leader} accepts league challengers here. Earn the ${district.badge} Badge to continue.`,
+          "Open Maps on your phone for the route. Pedestrians under eleven are advised to bring a parent. League applicants are exempt from this advice.",
+        ]),
+      2.5,
+      1.8,
+    );
+  }
+  const neighbours = [
+    [
+      "THE EARLY SHIFT",
+      "A voice answers through the door: Your mum's already at work. She told me you'd be going out. She didn't say you'd be collecting rats.",
+    ],
+    [
+      "RESIDENT / DOORSTEP TRANSCRIPT",
+      "You should be in school. Oh, you've got the league app. Apparently that counts now.",
+    ],
+    [
+      "NO ANSWER",
+      "The doorbell works. Nobody answers. A delivery note says the residents are at work until eight.",
+    ],
+    [
+      "LOCAL ADVICE",
+      "The clinic treats animals for free. Use it. Carrying six exhausted animals doesn't make you independent.",
+    ],
+    [
+      "NEIGHBOURHOOD WATCH",
+      "The notice says report unattended children. Underneath, in smaller print: except authorised league applicants.",
+    ],
+  ];
+  modularWorld.placementLog
+    .filter((p) => p.asset === "terrace-house-v2")
+    .forEach((house, index) => {
+      const x = house.x - 2.3 * Math.cos(house.ry) + 3.7 * Math.sin(house.ry);
+      const z = house.z + 2.3 * Math.sin(house.ry) + 3.7 * Math.cos(house.ry);
+      addTarget(
+        `neighbour-door-${index}`,
+        x,
+        z,
+        "Ring the doorbell",
+        () => {
+          const [title, line] = neighbours[index % neighbours.length];
+          speak(title, [line]);
+        },
+        1.8,
+        1.25,
+      );
+    });
   addTarget(
     "door",
     0,
@@ -1150,7 +1490,7 @@ function buildInteractions() {
     2,
     1.3,
   );
-  addTarget("gary", 24, -15, "Gary, apparently a professor", talkGary, 3, 1.5);
+  addTarget("gary", 24, -26, "Gary, apparently a professor", talkGary, 3, 1.45);
   addTarget(
     "ash-end-notice",
     -227.2,
@@ -1165,34 +1505,34 @@ function buildInteractions() {
     2.3,
     1.5,
   );
-  const gary = person("gary", 24, -15);
+  const gary = person("gary", 24, -26);
   gary.rotation.y = 0;
-  person("rival", 13, -9);
+  person("rival", HOME_CLINIC_RIVAL.x, HOME_CLINIC_RIVAL.z);
   addTarget(
     "rival",
-    13,
-    -9,
-    "Your neighbour",
+    HOME_CLINIC_RIVAL.x,
+    HOME_CLINIC_RIVAL.z,
+    `${state.rivalName}, your rival`,
     () => {
       if (!state.starter) {
         toast("Gary is waiting at the clinic.");
         return;
       }
       if (state.wins.includes("rival")) {
-        speak("YOUR NEIGHBOUR", [
+        speak(`${state.rivalName.toUpperCase()} / YOUR RIVAL`, [
           "My dad says this builds character. He has not left the house all week.",
         ]);
         return;
       }
       speak(
-        "YOUR NEIGHBOUR",
+        `${state.rivalName.toUpperCase()} / YOUR RIVAL`,
         [
           "Gary gave you an animal too? Good. We should battle. That is what everyone keeps telling us.",
         ],
         () =>
           startBattle({
             id: "rival",
-            name: "Your neighbour",
+            name: state.rivalName,
             kind: "rival",
             roster: [
               state.starter === "dog"
@@ -1211,7 +1551,16 @@ function buildInteractions() {
   for (let i = 0; i < 8; i++) {
     const t = worldInfo.towns[i];
     person(
-      i === 0 ? "crossing-guard" : i === 1 ? "landlord" : "gary",
+      [
+        "crossing-guard",
+        "landlord",
+        "groundskeeper",
+        "sanitation-officer",
+        "ranger",
+        "harbourmaster",
+        "headteacher",
+        "league-inspector",
+      ][i],
       t.gymX,
       t.gymZ,
     );
@@ -1252,26 +1601,79 @@ function buildInteractions() {
     );
     a.target = target;
   });
-  // The three actual animated starter models stand outside Gary's clinic.
+  // These are the actual animals in their indoor pens; collection reuses the same actor.
   ["cat", "dog", "hamster"].forEach((s, i) => {
-    const a = actor(s, 21 + i * 1.5, -16);
+    const [x, z] = [
+      [21, -25],
+      [24, -28],
+      [27, -25],
+    ][i];
+    const a = actor(s, x, z);
     a.stationary = true;
+    a.target = addTarget(
+      `starter-${s}`,
+      x,
+      z,
+      `Take the ${SPECIES[s].name.toLowerCase()}`,
+      () => takeStarter(s),
+      2.3,
+      0.4,
+    );
+    starterAnimals.set(s, a);
   });
+  refreshOpeningObjects();
 }
 
-function showJournal(tab = "map") {
+function showJournal(tab = "apps") {
+  $("journal-owner").textContent =
+    `${state.playerName?.toUpperCase() || "APPLICANT"} · AGE 10 · ${state.badges.length}/8 BADGES`;
   currentTab = tab;
   open("journal");
   renderJournal();
 }
 function renderJournal() {
-  for (const t of ["map", "party", "register", "guide"])
+  updatePhone();
+  for (const t of [
+    "apps",
+    "contacts",
+    "bag",
+    "map",
+    "party",
+    "register",
+    "guide",
+  ])
     $("tab-" + t).hidden = t !== currentTab;
   document
     .querySelectorAll("[data-tab]")
     .forEach((b) =>
       b.classList.toggle("selected", b.dataset.tab === currentTab),
     );
+  if (currentTab === "apps") {
+    const panel = $("tab-apps");
+    panel.replaceChildren();
+    const apps = document.createElement("div");
+    apps.className = "phone-apps";
+    for (const [tab, icon, name] of [
+      ["contacts", "•••", "Messages"],
+      ["party", "OA", "Animals"],
+      ["bag", "▤", "Bag"],
+      ["map", "↗", "Maps"],
+      ["register", "№", "Register"],
+      ["settings", "⚙", "Settings"],
+    ]) {
+      const button = document.createElement("button");
+      button.innerHTML = `<b>${icon}</b>${name}`;
+      button.onclick = () =>
+        tab === "settings" ? showSettings("journal") : showJournal(tab);
+      apps.appendChild(button);
+    }
+    const note = document.createElement("p");
+    note.textContent =
+      "Mum’s old phone. Screen time limit: 1 hour. Mandatory league fieldwork: indefinite.";
+    panel.append(apps, note);
+  }
+  if (currentTab === "contacts") renderContacts();
+  if (currentTab === "bag") renderBag();
   if (currentTab === "map") drawMap();
   if (currentTab === "register") {
     const panel = $("tab-register");
@@ -1355,27 +1757,54 @@ function renderJournal() {
           updateHUD();
         };
         row.appendChild(store);
+        const training = document.createElement("div");
+        training.className = "move-training";
+        const learned = learnedMoves(a),
+          equipped = unlockedMoves(a);
+        for (let slot = 0; slot < Math.min(4, learned.length); slot++) {
+          const label = document.createElement("label");
+          label.textContent = `MOVE ${slot + 1}`;
+          const select = document.createElement("select");
+          for (const id of learned) {
+            const option = document.createElement("option");
+            option.value = id;
+            option.textContent = MOVES[id].name;
+            select.appendChild(option);
+          }
+          select.value = equipped[slot] || learned[slot];
+          select.onchange = () => {
+            const choices = [...equipped];
+            const duplicate = choices.indexOf(select.value);
+            if (duplicate >= 0 && duplicate !== slot)
+              choices[duplicate] = choices[slot];
+            choices[slot] = select.value;
+            try {
+              state.party[i] = setMoveLoadout(a, choices);
+              save();
+              renderJournal();
+            } catch (error) {
+              toast(error.message);
+              select.value = equipped[slot];
+            }
+          };
+          label.appendChild(select);
+          training.appendChild(label);
+        }
+        const growth = document.createElement("p");
+        growth.style.flexBasis = "100%";
+        const stage = growthFor(a);
+        growth.textContent = `${stage.label} · ${stage.nextLevel ? `Next growth at Lv ${stage.nextLevel}` : "Fully grown"} · ${learned.length} learned moves`;
+        row.append(growth, training);
       }
       $("tab-party").appendChild(row);
     });
     const supplies = document.createElement("p");
     supplies.textContent = `£${state.money} · ${state.carriers} carriers · ${state.medkits} medkits. Treatment is free at home and at Gary’s clinic.`;
     $("tab-party").appendChild(supplies);
-    for (const [kind, cost] of [
-      ["carriers", 20],
-      ["medkits", 30],
-    ]) {
-      const b = document.createElement("button");
-      b.textContent = `BUY ${kind === "carriers" ? "CARRIER" : "MEDKIT"} · £${cost}`;
-      b.disabled = Boolean(battle) || state.money < cost;
-      b.onclick = () => {
-        state.money -= cost;
-        state[kind]++;
-        save();
-        renderJournal();
-      };
-      $("tab-party").appendChild(b);
-    }
+    const bagButton = document.createElement("button");
+    bagButton.textContent = "OPEN BAG";
+    bagButton.onclick = () => showJournal("bag");
+    $("tab-party").appendChild(bagButton);
     if (!partySelection) {
       const heading = document.createElement("h3");
       heading.textContent = `CLINIC STORAGE · ${state.reserve.length}/${RESERVE_LIMIT}`;
@@ -1409,9 +1838,211 @@ function renderJournal() {
 function atAnimalStorage() {
   return (
     !battle &&
-    (Math.hypot(position.x - 24, position.z + 15) < 6 ||
+    (Math.hypot(position.x - 24, position.z + 26) < 6 ||
       (Math.abs(position.x) < 4 && position.z > -4 && position.z < 8))
   );
+}
+function renderContacts() {
+  const panel = $("tab-contacts");
+  panel.replaceChildren();
+  const intro = document.createElement("p");
+  intro.textContent = "3 contacts. One of them remembered your birthday.";
+  panel.appendChild(intro);
+  const contacts = [
+    [
+      "MUM",
+      !state.note ? "1 unread message" : "At work · replies when she can",
+      () => openMumChat(),
+    ],
+    [
+      "GARY",
+      "County Research · not a verified account",
+      () =>
+        speak(
+          "GARY · MESSAGES",
+          [
+            !state.starter
+              ? "Come INSIDE the clinic. Bring your bag. The animals are in their pens. Please read your mother's message first."
+              : "Treatment is free when you visit. Your Animals app lets you select learned moves. Mix animal types; taking one exhausted animal through the whole county is not a strategy. It is, however, our current safeguarding policy.",
+          ],
+          () => showJournal("contacts"),
+        ),
+    ],
+    [
+      state.rivalName.toUpperCase(),
+      "Neighbour · also ten",
+      () =>
+        speak(
+          `${state.rivalName.toUpperCase()} · MESSAGES`,
+          [
+            state.wins.includes("rival")
+              ? "Dad says losing builds character. Conveniently, he said winning did too. Have you tried catching a different type?"
+              : "I'm outside Gary's clinic. He gave me an animal and told me to battle you. Is this homework??",
+          ],
+          () => showJournal("contacts"),
+        ),
+    ],
+  ];
+  for (const [name, status, action] of contacts) {
+    const button = document.createElement("button");
+    button.className = "contact-row";
+    const label = document.createElement("strong");
+    label.textContent = name;
+    const detail = document.createElement("small");
+    detail.textContent = status;
+    button.append(label, detail);
+    button.onclick = action;
+    panel.appendChild(button);
+  }
+}
+function openMumChat() {
+  if (!state.note) {
+    readMumMessage();
+    return;
+  }
+  const panel = $("tab-contacts");
+  panel.replaceChildren();
+  const heading = document.createElement("h3");
+  heading.textContent = "MUM · SMS";
+  panel.appendChild(heading);
+  const thread = document.createElement("div");
+  thread.className = "sms-thread";
+  thread.setAttribute("aria-live", "polite");
+  const history = state.messages.length
+    ? state.messages
+    : [
+        {
+          from: "mum",
+          text: "Made it out of bed? Let me know how you're getting on. x",
+        },
+      ];
+  for (const message of history) {
+    const bubble = document.createElement("p");
+    bubble.className = "sms-bubble" + (message.from === "you" ? " sent" : "");
+    bubble.textContent = message.text;
+    thread.appendChild(bubble);
+  }
+  panel.appendChild(thread);
+  const scrollThread = () => {
+    thread.scrollTop = thread.scrollHeight;
+  };
+  requestAnimationFrame(scrollThread);
+  const replies = [
+    [
+      "What should I do next?",
+      () =>
+        !state.bagTaken
+          ? "Your school bag is beside the bedroom door. Take it first. Go through the house, then into Gary's clinic across the road. He's inside, not standing in the rain. x"
+          : !state.starter
+            ? "Gary is in the research clinic. Choose an animal, then go to its pen and take it with you. It's a real animal, sweetheart. Please be kind to it."
+            : !state.wins.includes("rival")
+              ? `${state.rivalName} is waiting outside the clinic. Please tell me the league app has at least explained how battling works.`
+              : `${state.badges.length} badges already? Please use Maps for the next district. Rest at home or the clinic if your animals need help. You don't have to do everything at once.`,
+    ],
+    [
+      "I'm scared.",
+      () =>
+        "Then come home. You do not owe anybody a badge. Your bed is here and I'll phone when my break starts. I love you. x",
+    ],
+    [
+      "Are you coming with me?",
+      () =>
+        "I asked for the morning off. They said the league counts as supervised childcare. Who is actually supervising you? …Please keep your phone charged.",
+    ],
+    [
+      "I won a badge!",
+      () =>
+        state.badges.length
+          ? `${state.badges.length} badges. I'm proud of you for trying, ${state.playerName}. I'm much less impressed with the adults making you do this. Have something to eat. x`
+          : "Have you? Your league app says zero. I can see that bit, apparently. I can't see your location. What a useful parental control. x",
+    ],
+  ];
+  for (const [text, answer] of replies) {
+    const button = document.createElement("button");
+    button.className = "sms-reply";
+    button.textContent = text;
+    button.onclick = () => {
+      const sent = document.createElement("p");
+      sent.className = "sms-bubble sent";
+      sent.textContent = text;
+      const received = document.createElement("p");
+      received.className = "sms-bubble";
+      received.textContent = answer();
+      appendMessage(state, "you", text);
+      appendMessage(state, "mum", received.textContent);
+      panel.querySelectorAll(".sms-reply").forEach((n) => n.remove());
+      thread.append(sent, received);
+      scrollThread();
+      const again = document.createElement("button");
+      again.className = "sms-reply";
+      again.textContent = "SEND ANOTHER MESSAGE";
+      again.onclick = openMumChat;
+      panel.appendChild(again);
+      if (!state.interactions.includes("messaged-mum"))
+        state.interactions.push("messaged-mum");
+      save();
+    };
+    panel.appendChild(button);
+  }
+}
+function atSupplyCounter() {
+  return (
+    !battle &&
+    roomAt(position.x, position.z)?.id === "mercy-general-stores" &&
+    Math.hypot(position.x + 42, position.z - 5.3) < 2.1
+  );
+}
+function renderBag() {
+  const panel = $("tab-bag");
+  panel.replaceChildren();
+  if (!state.bagTaken) {
+    const p = document.createElement("p");
+    p.textContent =
+      "Your school bag is still beside the bedroom door. Pick it up to bring your supplies.";
+    panel.appendChild(p);
+    return;
+  }
+  for (const [name, value] of [
+    ["Folded pet carriers", state.carriers],
+    ["Animal medkits", state.medkits],
+    ["Emergency money", `£${state.money}`],
+    ["Torch", "CHARGED"],
+    ["Lunch", "NOT PROVIDED"],
+  ]) {
+    const row = document.createElement("div");
+    row.className = "bag-item";
+    const label = document.createElement("strong");
+    label.textContent = name;
+    const count = document.createElement("span");
+    count.textContent = value;
+    row.append(label, count);
+    panel.appendChild(row);
+  }
+  const note = document.createElement("p");
+  note.textContent =
+    "Use carriers and medkits from the battle app. Treatment at home and the research clinic is free.";
+  panel.appendChild(note);
+  for (const [kind, cost, label] of [
+    ["carriers", atSupplyCounter() ? 15 : 20, "CARRIER"],
+    ["medkits", atSupplyCounter() ? 25 : 30, "MEDKIT"],
+  ]) {
+    const button = document.createElement("button");
+    button.textContent = `${atSupplyCounter() ? "COLLECT" : "ORDER"} ${label} · £${cost}`;
+    button.disabled = Boolean(battle) || state.money < cost;
+    button.onclick = () => {
+      if (battle || state.money < cost) return;
+      state.money -= cost;
+      state[kind]++;
+      save();
+      renderBag();
+      toast(
+        atSupplyCounter()
+          ? "Collected from Mercy General Stores. Receipt sent to your phone."
+          : "League same-day supply delivery. The safeguarding officer remains unavailable.",
+      );
+    };
+    panel.appendChild(button);
+  }
 }
 const mapCoordinates = (x, z) => ({ x: 450 + x * 0.95, y: 300 + z * 0.8 });
 function drawMap() {
@@ -1436,21 +2067,21 @@ function drawMap() {
   c.strokeStyle = "#71826a";
   c.lineWidth = 5;
   c.beginPath();
-  const route = [[0, 20], ...worldInfo.towns.map((t) => [t.x, t.z]), [0, 20]];
+  const route = worldInfo.route;
   route.forEach(([x, z], i) => {
     const p = mapCoordinates(x, z);
     i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y);
   });
   c.stroke();
-  c.font = "12px monospace";
+  c.font = "bold 26px monospace";
   worldInfo.towns.forEach((t, i) => {
     const p = mapCoordinates(t.x, t.z);
     c.fillStyle = state.badges.includes(i) ? "#ceb37c" : "#718481";
     c.beginPath();
-    c.arc(p.x, p.y, 7, 0, Math.PI * 2);
+    c.arc(p.x, p.y, 11, 0, Math.PI * 2);
     c.fill();
     c.fillStyle = "#c7d1c2";
-    c.fillText(`${i + 1}. ${DISTRICTS[i].name}`, p.x + 12, p.y - 8);
+    c.fillText(`${i + 1}`, p.x + 16, p.y - 8);
   });
   for (const [x, z, name] of [
     [0, 0, "HOME"],
@@ -1471,12 +2102,51 @@ function drawMap() {
   c.moveTo(p.x, p.y);
   c.lineTo(p.x - Math.sin(yaw) * 15, p.y - Math.cos(yaw) * 15);
   c.stroke();
-  $("map-caption").textContent =
-    "WICKMERE COUNTY · 1.2 × 1.2 KM · Follow the ring road. Click an earned badge location to take the league bus. Home and clinic travel unlocks after the first badge.";
-  $("badge-list").innerHTML = DISTRICTS.map(
-    (d, i) =>
-      `<span class="${state.badges.includes(i) ? "won" : ""}">${i + 1}. ${d.badge}</span>`,
-  ).join("");
+  $("map-caption").textContent = battle
+    ? "LIVE BATTLE · Travel is unavailable until this encounter ends."
+    : "WICKMERE COUNTY · 1.2 × 1.2 KM · Tap an earned badge location for the league bus. Home and clinic travel unlocks after your first badge.";
+  $("badge-list").replaceChildren();
+  DISTRICTS.forEach((d, i) => {
+    const button = document.createElement("button");
+    const earned = state.badges.includes(i);
+    button.textContent = `${i + 1}. ${d.name}\n${earned ? "✓ " : "○ "}${d.badge}`;
+    button.disabled = Boolean(battle) || !earned;
+    button.onclick = () => travelToDistrict(i);
+    $("badge-list").appendChild(button);
+  });
+  for (const [name, label] of [
+    ["home", "BUS HOME"],
+    ["clinic", "BUS TO CLINIC"],
+  ]) {
+    const button = document.createElement("button");
+    button.textContent = label;
+    button.disabled = Boolean(battle) || !state.badges.length;
+    button.onclick = () => travelToKnownLocation(name);
+    $("badge-list").appendChild(button);
+  }
+}
+function travelToKnownLocation(name) {
+  if (battle || !state.badges.length || !["home", "clinic"].includes(name))
+    return;
+  const [x, z] = name === "home" ? [0, 9.3] : [24, -16.4];
+  position.set(x, floor(x, z) + EYE_HEIGHT, z);
+  close();
+  syncCompanion();
+  save();
+  toast(
+    name === "home"
+      ? "League bus · home. Your room is still here."
+      : "League bus · County Research. Treatment is free inside.",
+  );
+}
+function travelToDistrict(i) {
+  if (battle || !state.badges.includes(i)) return;
+  const t = worldInfo.towns[i];
+  position.set(t.x, EYE_HEIGHT, t.z);
+  close();
+  syncCompanion();
+  save();
+  toast(`League bus: ${DISTRICTS[i].name}. Children travel unaccompanied.`);
 }
 $("map").onclick = (e) => {
   if (battle) return;
@@ -1487,21 +2157,21 @@ $("map").onclick = (e) => {
     const t = worldInfo.towns[i],
       p = mapCoordinates(t.x, t.z);
     if (Math.hypot(x - p.x, y - p.y) < 25 && state.badges.includes(i)) {
-      position.set(t.x, 1.35, t.z);
-      close();
-      syncCompanion();
-      save();
-      toast(`League bus: ${DISTRICTS[i].name}. Children travel unaccompanied.`);
+      travelToDistrict(i);
       return;
     }
   }
-  const p = mapCoordinates(0, 0);
-  if (Math.hypot(x - p.x, y - p.y) < 40 && state.badges.length) {
-    position.set(0, 1.35, 8);
-    close();
-    syncCompanion();
-    save();
-  }
+  const destinations = [
+    ["home", 0, 0],
+    ["clinic", 24, -23],
+  ]
+    .map(([name, wx, wz]) => {
+      const p = mapCoordinates(wx, wz);
+      return { name, distance: Math.hypot(x - p.x, y - p.y) };
+    })
+    .sort((a, b) => a.distance - b.distance);
+  if (destinations[0].distance < 24)
+    travelToKnownLocation(destinations[0].name);
 };
 for (const b of document.querySelectorAll("[data-tab]"))
   b.onclick = () => {
@@ -1512,7 +2182,61 @@ $("menu-btn").onclick = () => {
   if (!modal && !battle) showJournal();
 };
 $("close-journal").onclick = close;
-$("motion").checked = cameraMotion;
+$("settings-controls").appendChild(document.querySelector(".settings"));
+$("settings-controls").appendChild($("audio-btn"));
+let settingsReturn = null;
+function showSettings(from = null) {
+  settingsReturn = from;
+  open("settings-panel");
+}
+$("title-settings").onclick = () => showSettings();
+$("journal-settings").onclick = () => showSettings("journal");
+function closeSettings() {
+  close(false);
+  if (settingsReturn === "journal") showJournal(currentTab);
+  else lookControl.resume();
+}
+$("settings-close").onclick = closeSettings;
+function phoneHome() {
+  if (!playing) {
+    close(false);
+    return;
+  }
+  if (battle) {
+    close(false);
+    battle.menu = "root";
+    renderBattle();
+    updatePhone();
+    return;
+  }
+  showJournal("apps");
+}
+$("phone-home").onclick = phoneHome;
+$("phone-home-bar").onclick = phoneHome;
+$("phone-back").onclick = () => {
+  if (modal === "settings-panel") {
+    closeSettings();
+    return;
+  }
+  if (modal === "journal" && currentTab !== "apps") {
+    showJournal("apps");
+    return;
+  }
+  if (modal === "dialogue") {
+    advanceDialogue();
+    return;
+  }
+  if (modal) {
+    close();
+    return;
+  }
+  if (battle) {
+    battle.menu = "root";
+    renderBattle();
+    return;
+  }
+  if (playing) close();
+};
 $("motion").checked = cameraMotion;
 $("motion").onchange = (e) => {
   cameraMotion = e.target.checked;
@@ -1564,7 +2288,7 @@ $("reset-yes").onclick = () => {
 };
 $("ending-close").onclick = () => {
   close();
-  position.set(0, 1.35, 1.8);
+  position.set(0, EYE_HEIGHT, 1.8);
   yaw = 0.34;
   pitch = -0.045;
   syncCompanion();
@@ -1579,10 +2303,7 @@ function interact() {
 $("interact-btn").onclick = interact;
 function requestLook() {
   if (!playing || modal || battle) return;
-  const result = renderer.domElement.requestPointerLock?.();
-  result?.catch(() => {
-    $("look-hint").textContent = "DRAG TO LOOK · ARROW KEYS ALSO TURN";
-  });
+  lookControl.engage();
 }
 renderer.domElement.addEventListener("pointerdown", (e) => {
   if (!playing || modal || battle) return;
@@ -1614,9 +2335,16 @@ window.addEventListener("pointerup", () => (previousTouch = null));
 document.addEventListener("pointerlockerror", () => {
   $("look-hint").textContent = "DRAG TO LOOK · ARROW KEYS ALSO TURN";
 });
+document.addEventListener("pointerlockchange", () => {
+  lookControl.changed();
+  if (document.pointerLockElement === renderer.domElement)
+    $("look-hint").textContent = "MOUSE TO LOOK · ESC RELEASES MOUSE";
+});
 window.addEventListener("keydown", (e) => {
   if (modal) {
     if (e.key === "Escape" && modal === "journal") close();
+    if (e.key === "Escape" && modal === "settings-panel") closeSettings();
+    if (e.key === "Escape" && modal === "registration") close(false);
     if (e.key === "Tab") {
       const nodes = [
         ...$(modal).querySelectorAll("button:not([disabled]),input,select"),
@@ -1631,6 +2359,7 @@ window.addEventListener("keydown", (e) => {
     }
     return;
   }
+  if (!playing) return;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key))
     e.preventDefault();
   keys.add(e.key.toLowerCase());
@@ -1642,7 +2371,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key.toLowerCase() === "j" && !battle && playing) showJournal();
   if (battle && ["1", "2", "3", "4"].includes(e.key))
-    turn(SPECIES[state.party[battle.active].species].moves[Number(e.key) - 1]);
+    turn(unlockedMoves(state.party[battle.active])[Number(e.key) - 1]);
 });
 window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur", () => {
@@ -1743,19 +2472,38 @@ function buildRain() {
       y: Math.random() * 25,
     });
 }
-let last = performance.now();
+let last = performance.now(),
+  hudNext = 0,
+  lightsNext = 0;
+const viewDirection = new THREE.Vector3(),
+  targetVector = new THREE.Vector3();
+const torchOffset = new THREE.Vector3(),
+  lightOffset = new THREE.Vector3();
+const companionPrevious = new THREE.Vector3();
+const doorVisibility = { doorOpen: false, frontOpen: false };
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min((now - last) / 1000, 0.045);
   last = now;
   time += dt;
-  if (!worldInfo) return;
+  if (!worldInfo || !renderReady) return;
+  const viewOrigin = playing ? position : titlePosition;
+  doorVisibility.doorOpen = doorOpen;
+  doorVisibility.frontOpen = frontOpen;
   for (const a of actors) {
-    if (a.scenery) {
+    if (a.scenery || a.person) {
       const range = a.visibleDistance ?? 170;
       a.root.visible =
-        a.root.position.distanceToSquared(position) < range * range;
+        a.root.position.distanceToSquared(viewOrigin) < range * range;
       if (!a.root.visible) continue;
+    }
+    if (a.hostile && a.root.position.distanceToSquared(viewOrigin) > 10000) {
+      a.root.visible = false;
+      continue;
+    }
+    if (a.removed) {
+      a.root.visible = false;
+      continue;
     }
     a.mixer.update(dt);
     if (a.stationary || (battle && (a === battle.left || a === battle.right)))
@@ -1763,7 +2511,7 @@ function frame(now) {
     if (a === companion) {
       a.root.visible = !battle;
       if (battle) continue;
-      const previous = a.root.position.clone();
+      const previous = companionPrevious.copy(a.root.position);
       const walking =
         playing &&
         !modal &&
@@ -1777,7 +2525,7 @@ function frame(now) {
       } else play(a, "Idle");
       a.root.position.y = floor(a.root.position.x, a.root.position.z);
     } else if (a.hostile) {
-      const distance = a.root.position.distanceTo(position);
+      const distance = a.root.position.distanceTo(viewOrigin);
       const recovering = (a.respawnAt ?? 0) > time;
       a.target.unavailable = recovering;
       a.root.visible =
@@ -1805,8 +2553,10 @@ function frame(now) {
       if (a.target) {
         a.target.x = a.root.position.x;
         a.target.z = a.root.position.z;
+        a.target.y = a.root.position.y + a.target.height;
       }
     }
+    if (a.species) groundAnimal(a);
   }
   doorAngle = THREE.MathUtils.damp(
     doorAngle,
@@ -1845,13 +2595,13 @@ function frame(now) {
       else stamina = Math.min(100, stamina + dt * 8);
     } else stamina = Math.min(100, stamina + dt * 15);
     const ground = floor(position.x, position.z);
-    position.y = THREE.MathUtils.damp(position.y, ground + 1.35, 15, dt);
+    position.y = THREE.MathUtils.damp(position.y, ground + EYE_HEIGHT, 15, dt);
     footTimer += dt;
     if (moving && footTimer > 0.4) {
       footTimer = 0;
       tone(55 + Math.random() * 15, 0.07, 0.028);
     }
-    const direction = new THREE.Vector3(
+    const direction = viewDirection.set(
       -Math.sin(yaw) * Math.cos(pitch),
       Math.sin(pitch),
       -Math.cos(yaw) * Math.cos(pitch),
@@ -1859,21 +2609,24 @@ function frame(now) {
     activeTarget = null;
     for (const t of targets) {
       if (t.unavailable) continue;
-      const v = new THREE.Vector3(
+      const v = targetVector.set(
           t.x - position.x,
-          t.y + floor(t.x, t.z) - position.y,
+          t.y - position.y,
           t.z - position.z,
         ),
         dist = v.length();
       if (
         dist < t.radius &&
         v.normalize().dot(direction) > 0.45 &&
+        interactionVisibility.visible(position, t, doorVisibility) &&
         (!activeTarget || dist < activeTarget.distance)
       )
         activeTarget = { ...t, distance: dist };
     }
     $("interact").hidden = !activeTarget;
-    $("interact-label").textContent = activeTarget?.name || "";
+    const label = activeTarget?.name || "";
+    if ($("interact-label").textContent !== label)
+      $("interact-label").textContent = label;
     saveTimer += dt;
     if (saveTimer > 8) {
       saveTimer = 0;
@@ -1897,7 +2650,7 @@ function frame(now) {
       camera.position.y += Math.sin(time * 11) * 0.023;
     camera.rotation.set(pitch, yaw, 0, "YXZ");
     if (!playing) {
-      camera.position.set(0.15, 1.28, 1.9);
+      camera.position.copy(titlePosition);
       camera.rotation.set(-0.035, 0.34, 0, "YXZ");
     }
   }
@@ -1912,7 +2665,7 @@ function frame(now) {
     torch.position
       .copy(camera.position)
       .add(
-        new THREE.Vector3(0.2, -0.2, -0.38).applyQuaternion(camera.quaternion),
+        torchOffset.set(0.2, -0.2, -0.38).applyQuaternion(camera.quaternion),
       );
     torch.quaternion.copy(camera.quaternion);
     torch.rotateX(Math.PI / 2);
@@ -1921,14 +2674,15 @@ function frame(now) {
   flashlight.position
     .copy(camera.position)
     .add(
-      new THREE.Vector3(0.15, -0.15, -0.08).applyQuaternion(camera.quaternion),
+      lightOffset.set(0.15, -0.15, -0.08).applyQuaternion(camera.quaternion),
     );
   flashlight.target.position
     .copy(camera.position)
-    .add(new THREE.Vector3(0, 0, -12).applyQuaternion(camera.quaternion));
-  moon.position.set(position.x + 20, 35, position.z - 25);
-  moon.target.position.set(position.x, 0, position.z);
-  const inside = Math.abs(position.x) < 4.2 && Math.abs(position.z) < 4.2;
+    .add(lightOffset.set(0, 0, -12).applyQuaternion(camera.quaternion));
+  moon.position.set(viewOrigin.x + 20, 35, viewOrigin.z - 25);
+  moon.target.position.set(viewOrigin.x, 0, viewOrigin.z);
+  const insideRoom = roomAt(viewOrigin.x, viewOrigin.z);
+  const inside = Boolean(insideRoom);
   ambient.intensity = THREE.MathUtils.damp(
     ambient.intensity,
     inside ? 0.6 : battle ? 1.15 : 0.95,
@@ -1938,45 +2692,66 @@ function frame(now) {
   battleLight.visible = Boolean(battle);
   if (battle)
     battleLight.position.set(battle.anchor.x - 1, 3, battle.anchor.z + 2);
-  const nearestLamps = [...worldInfo.lights]
-    .sort(
-      (a, b) =>
-        Math.hypot(a.x - position.x, a.z - position.z) -
-        Math.hypot(b.x - position.x, b.z - position.z),
-    )
-    .slice(0, 4);
-  streetLights.forEach((l, i) => {
-    const p = nearestLamps[i];
-    l.visible =
-      Boolean(p) && Math.hypot(p.x - position.x, p.z - position.z) < 45;
-    if (p) l.position.set(p.x, p.y, p.z);
-  });
+  if (time > lightsNext) {
+    lightsNext = time + 0.25;
+    const nearestLamps = nearestLights(
+      worldInfo.lightGroups[insideRoom?.id || "outside"] || [],
+      viewOrigin.x,
+      viewOrigin.z,
+    );
+    streetLights.forEach((l, i) => {
+      const p = nearestLamps[i];
+      l.visible = true;
+      l.intensity = p ? (p.power || 38) * (p.room ? 0.1 : 1) : 0;
+      if (p) {
+        l.position.set(p.x, p.y, p.z);
+        l.color.set(p.color || 0xf5c18b);
+      }
+    });
+  }
   if (rainMesh) {
     for (let i = 0; i < rainData.length; i++) {
       const r = rainData[i];
       r.y -= dt * 12;
       if (r.y < 0) r.y = 25;
-      const rx = position.x + r.x,
-        rz = position.z + r.z;
+      const rx = viewOrigin.x + r.x,
+        rz = viewOrigin.z + r.z;
       dummy.position.set(rx, r.y + floor(rx, rz), rz);
       dummy.rotation.z = 0.1;
-      dummy.scale.setScalar(Math.abs(rx) < 4.3 && Math.abs(rz) < 4.3 ? 0 : 1);
+      dummy.scale.setScalar(roomAt(rx, rz) ? 0 : 1);
       dummy.updateMatrix();
       rainMesh.setMatrixAt(i, dummy.matrix);
     }
     rainMesh.instanceMatrix.needsUpdate = true;
   }
-  if (playing && !battle) {
-    $("location").textContent = inside ? "YOUR BEDROOM" : regionName();
+  if (playing && !battle && time > hudNext) {
+    hudNext = time + 0.15;
+    $("location").textContent = inside
+      ? insideRoom.label.toUpperCase()
+      : regionName();
     const goal = setObjective(),
       dist = Math.hypot(goal.x - position.x, goal.z - position.z);
-    $("waypoint").innerHTML =
-      `${Math.round(dist)} M<small>${goal.name}</small>`;
+    const waypoint = `${Math.round(dist)} M<small>${goal.name}</small>`;
+    if ($("waypoint").innerHTML !== waypoint)
+      $("waypoint").innerHTML = waypoint;
     $("stamina").firstElementChild.style.width = stamina + "%";
   }
-  modularWorld?.updateVisibility(position);
+  modularWorld?.updateVisibility(viewOrigin);
   renderer.info.reset();
+  renderer.shadowMap.needsUpdate = true;
   composer.render();
+  heldPhone?.render(renderer, dt);
+}
+function roomAt(x, z) {
+  if (Math.abs(x) < 4.2 && Math.abs(z) < 4.2)
+    return { id: "bedroom", label: "Your bedroom" };
+  return worldInfo?.interiors.rooms.find(
+    (r) =>
+      x > r.minX - 0.1 &&
+      x < r.maxX + 0.1 &&
+      z > r.minZ - 0.1 &&
+      z < r.maxZ + 0.1,
+  );
 }
 function regionName() {
   if (Math.abs(position.x + 93) < 17 && position.z > 36 && position.z < 64)
@@ -2007,8 +2782,10 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  heldPhone?.invalidate();
 });
-$("begin").onclick = () => {
+function enterWorld() {
+  close(false);
   playing = true;
   $("title").hidden = true;
   $("hud").hidden = false;
@@ -2016,21 +2793,58 @@ $("begin").onclick = () => {
     doorOpen = true;
     frontOpen = true;
     syncCompanion();
-  } else position.set(0, 1.35, 1.8);
+  } else {
+    position.set(state.position.x, EYE_HEIGHT, state.position.z);
+    doorOpen = Boolean(state.note);
+  }
+  refreshOpeningObjects();
   updateHUD();
-  requestLook();
+  updatePhone();
+  if (!state.note) {
+    lookControl.prepare();
+    readMumMessage();
+  } else requestLook();
+  save();
+}
+$("begin").onclick = () => {
+  $("overwrite-row").hidden = !savedCampaign;
+  $("overwrite-save").checked = false;
+  $("overwrite-save").required = Boolean(savedCampaign);
+  open("registration");
+};
+$("registration-back").onclick = () => close(false);
+$("registration-form").onsubmit = (event) => {
+  event.preventDefault();
+  if (savedCampaign && !$("overwrite-save").checked) return;
+  state = initialSave();
+  state.playerName = sanitiseName($("player-name").value, "Alex");
+  state.rivalName = sanitiseName($("rival-name").value, "Robin");
+  position.set(0, EYE_HEIGHT, 1.8);
+  yaw = 0.34;
+  pitch = -0.045;
+  doorOpen = false;
+  frontOpen = false;
+  syncCompanion();
+  enterWorld();
+};
+$("load-game").onclick = () => {
+  if (savedCampaign) enterWorld();
 };
 async function load() {
   const loader = new GLTFLoader();
-  const [catalog, layout, lighting] = await Promise.all(
-    ["asset-catalog.json", "bedroom-layout.json", "world-lighting.json"].map(
-      async (file) => {
-        const response = await fetch(base + file);
-        if (!response.ok) throw new Error(file + " missing");
-        return response.json();
-      },
-    ),
+  const [catalog, layout, lighting, textureHashes] = await Promise.all(
+    [
+      "asset-catalog.json",
+      "bedroom-layout.json",
+      "world-lighting.json",
+      "texture-hashes.json",
+    ].map(async (file) => {
+      const response = await fetch(base + file);
+      if (!response.ok) throw new Error(file + " missing");
+      return response.json();
+    }),
   );
+  texturePool = createAssetTexturePool(textureHashes);
   const names = Object.keys(catalog);
   const sky = await new HDRLoader().loadAsync(base + lighting.environment);
   sky.mapping = THREE.EquirectangularReflectionMapping;
@@ -2039,12 +2853,19 @@ async function load() {
   scene.background = sky;
   scene.backgroundIntensity = 0.8;
   let loaded = 0;
+  // Bound concurrent decode work instead of scheduling every large image together.
+  const queue = [...names];
   await Promise.all(
-    names.map(async (name) => {
-      assets[name] = await loader.loadAsync(`${base}models/${name}.glb`);
-      loaded++;
-      $("progress").textContent =
-        Math.round((loaded / names.length) * 100) + "%";
+    Array.from({ length: 4 }, async () => {
+      while (queue.length) {
+        const name = queue.shift();
+        const gltf = await loader.loadAsync(`${base}models/${name}.glb`);
+        await texturePool.share(name, gltf);
+        assets[name] = gltf;
+        loaded++;
+        $("progress").textContent =
+          Math.round((loaded / names.length) * 100) + "%";
+      }
     }),
   );
   for (const [name, a] of Object.entries(assets)) {
@@ -2056,6 +2877,12 @@ async function load() {
   }
   modularWorld = assembleWorld(scene, assets, catalog, layout);
   worldInfo = modularWorld.info;
+  collisionIndex = createCollisionIndex(worldInfo.collisions);
+  interactionVisibility = createInteractionVisibility(
+    modularWorld.placementLog,
+    catalog,
+  );
+  position.y = floor(position.x, position.z) + EYE_HEIGHT;
   region = modularWorld.root;
   actors.push(...modularWorld.animated);
   door = asset("door", -0.7, 4);
@@ -2066,11 +2893,60 @@ async function load() {
   carrier.visible = false;
   buildInteractions();
   buildRain();
+  heldPhone = createHeldPhone(assets["held-phone"], $("phone"));
   if (state.starter) syncCompanion();
+  // Warm the saved location and common animal/handheld textures in small batches.
+  // The 230 m margin includes the 170 m visible chunks and their half diagonal.
+  // Distant district-only textures remain lazy to avoid making the full county
+  // resident on graphics devices with limited memory.
+  const localAssets = new Set([
+    ...Object.keys(SPECIES),
+    "held-phone",
+    "door",
+    "torch",
+    "carrier",
+    "rain",
+  ]);
+  for (const placement of modularWorld.placementLog)
+    if (
+      Math.hypot(placement.x - position.x, placement.z - position.z) < 230 ||
+      Math.hypot(placement.x - titlePosition.x, placement.z - titlePosition.z) <
+        230
+    )
+      localAssets.add(placement.asset);
+  const uploads = createTextureUploadQueue(renderer);
+  for (const name of localAssets) if (assets[name]) uploads.add(assets[name]);
+  $("loading-status").textContent = "PREPARING LOCAL SURFACES…";
+  while (uploads.remaining) {
+    uploads.step({ budgetMs: 3, maxTextures: 2 });
+    await new Promise(requestAnimationFrame);
+  }
+  $("loading-status").textContent = "PREPARING LIGHTING…";
+  // Prepare the actual torch and battle-light shader combinations before the
+  // first player-controlled encounter can request one synchronously.
+  for (const [torchVisible, battleVisible] of [
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ]) {
+    flashlight.visible = torchVisible;
+    battleLight.visible = battleVisible;
+    await renderer.compileAsync(scene, camera);
+  }
+  flashlight.visible = false;
+  battleLight.visible = false;
+  await heldPhone.prepare(renderer);
+  $("loading-status").textContent = "WAKING THE COUNTY…";
+  renderReady = true;
+  await new Promise(requestAnimationFrame);
   $("begin").disabled = false;
-  $("begin").innerHTML = state.starter
-    ? "CONTINUE YOUR JOURNEY <span>→</span>"
-    : "WAKE UP <span>→</span>";
+  $("load-game").disabled = !savedCampaign;
+  $("save-summary").textContent = savedCampaign
+    ? `${state.playerName} · ${state.badges.length}/8 BADGES · ${state.party.length} ANIMALS`
+    : "No journey recorded. Your room is waiting.";
+  $("loading-status").textContent =
+    "AGE REQUIREMENT: TEN · ADULT SUPERVISION: NONE";
 }
 load().catch(showError);
 if (import.meta.env.DEV)
@@ -2081,13 +2957,21 @@ if (import.meta.env.DEV)
       z: position.z,
       yaw,
       pitch,
+      ground: floor(position.x, position.z),
     }),
     stats: () => ({
       calls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       actors: actors.length,
       placements: modularWorld?.placementLog.length,
+      textures: renderer.info.memory.textures,
+      textureSharing: texturePool?.stats,
     }),
+    renderProfile: async (frames = 6) =>
+      (await import("./render-diagnostics.js")).captureRenderProfile(
+        { renderer, scene, camera, assets },
+        frames,
+      ),
     assets: () =>
       Object.fromEntries(
         Object.entries(assets).map(([k, v]) => [
@@ -2104,6 +2988,7 @@ if (import.meta.env.DEV)
           companion: a === companion,
           target: a.target?.id,
           x: a.root.position.x,
+          y: a.root.position.y,
           z: a.root.position.z,
           animation: a.clip,
           blocked: collision(a.root.position.x, a.root.position.z),

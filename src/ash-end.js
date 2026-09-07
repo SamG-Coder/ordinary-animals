@@ -16,7 +16,7 @@ export function buildAshEnd({ place, lamp }) {
     }
   for (const x of [-242, -239, -227, -224, -221, -218, -215, -212, -209])
     place("estate-railing-3m", x, -22);
-  for (const z of [-25, -28, -31, -34, -37, -40])
+  for (const z of [-28, -31, -34, -37, -40])
     place(
       "estate-railing-3m",
       -245 + ((-20 - z) * 40) / 180,
@@ -25,7 +25,7 @@ export function buildAshEnd({ place, lamp }) {
       Math.atan2(40, -180) + Math.PI / 2,
     );
   for (let x = -243; x <= -233; x += 2)
-    place("path-2m", x, -20, 0, Math.PI / 2, 1.4);
+    place("path-2m", x, -20, 0, Math.PI / 2, 1.4, true, 1 / 1.4);
   place("estate-notice", -227.2, -21.5, 0, 0, 1, false);
   for (const [x, z, angle] of [
     [-225, -37, 0.1],

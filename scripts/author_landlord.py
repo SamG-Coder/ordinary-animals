@@ -184,6 +184,53 @@ root.name = "landlord"
 current.name = "landlord"
 bpy.context.scene.frame_set(1)
 bpy.context.scene.frame_end = 79
+
+
+def batch_rigid_parts(collection):
+    """Join same-material rigid parts below the same animated ancestor.
+
+    Animation remains on the original empty hierarchy. Curves are evaluated
+    before joining; mesh modifiers follow the export_apply=False policy used
+    by the existing GLB. This preserves the exported surface exactly.
+    """
+    grouped = {}
+    for obj in list(collection.objects):
+        if obj.type not in {'MESH', 'CURVE', 'FONT'}:
+            continue
+        if obj.animation_data or (obj.type == 'MESH' and obj.data.shape_keys):
+            continue
+        if len(obj.data.materials) != 1:
+            continue
+        parent = obj.parent
+        while parent and parent != root and not parent.animation_data:
+            parent = parent.parent
+        anchor = parent or root
+        key = (anchor, obj.data.materials[0])
+        grouped.setdefault(key, []).append(obj)
+    before = sum(o.type in {'MESH', 'CURVE', 'FONT'} for o in collection.objects)
+    for (anchor, mat), group in grouped.items():
+        if len(group) < 2:
+            continue
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in group:
+            # The project exports the original mesh, without unapplied bevels
+            # or thickness modifiers. Conversion must use that same mesh.
+            if obj.type == 'MESH':
+                obj.modifiers.clear()
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = group[0]
+        bpy.ops.object.convert(target='MESH')
+        bpy.ops.object.join()
+        joined = bpy.context.object
+        transform = joined.matrix_world.copy()
+        joined.parent = anchor
+        joined.matrix_world = transform
+        joined.name = f'{anchor.name} / {mat.name}'
+    after = sum(o.type in {'MESH', 'CURVE', 'FONT'} for o in collection.objects)
+    print('LANDLORD_RIGID_BATCHES', json.dumps({'before': before, 'after': after}))
+
+
+batch_rigid_parts(current)
 bpy.data.orphans_purge(do_recursive=True)
 for image in bpy.data.images:
     if image.users and image.has_data:
