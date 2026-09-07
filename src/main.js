@@ -210,6 +210,12 @@ function setupMesh(root) {
       o.distance = 7;
       o.decay = 1.6;
       o.castShadow = false;
+      if (o.isSpotLight) {
+        o.castShadow = true;
+        o.shadow.mapSize.set(1024, 1024);
+        o.shadow.bias = -0.00015;
+        o.shadow.normalBias = 0.008;
+      }
     }
   });
   return root;
@@ -915,6 +921,33 @@ function buildInteractions() {
     1.2,
   );
   addTarget("letter", -1.35, -2.6, "Letter from Mum", readLetter, 2, 1);
+  addTarget(
+    "radio",
+    -2.78,
+    -2.82,
+    "County morning broadcast",
+    () =>
+      speak("WICKMERE RADIO / 88.1 FM", [
+        "Good morning, Wickmere. It is five seventeen. Rain will continue until further notice. The council says this is character building.",
+        "Today's league intake begins at County Research. Applicants must be ten or older. Parents are reminded that a white coat is not a qualification.",
+        "In school news: attendance exemptions are available to children carrying a live animal and a sufficiently confident letter.",
+      ]),
+    1.5,
+    1.05,
+  );
+  addTarget(
+    "hall-bills",
+    -1.74,
+    6,
+    "Unopened bills",
+    () =>
+      speak("FINAL REMINDER", [
+        "Council tax. Electricity. School contributions. Your mother has underlined the dates twice.",
+        "Underneath is a league brochure: A BRIGHTER FUTURE FOR YOUR CHILD. The entry fee has been circled.",
+      ]),
+    1.35,
+    0.82,
+  );
   addTarget(
     "door",
     0,

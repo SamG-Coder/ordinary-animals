@@ -356,5 +356,29 @@
   "rival": {
     "model": "models/rival.glb",
     "source": "assets/rival.blend"
+  },
+  "radiator": {
+    "source": "assets/radiator.blend",
+    "model": "models/radiator.glb"
+  },
+  "socket": {
+    "source": "assets/socket.blend",
+    "model": "models/socket.glb"
+  },
+  "hall-table": {
+    "source": "assets/hall-table.blend",
+    "model": "models/hall-table.glb",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 1,
+        "d": 0.36
+      }
+    ]
+  },
+  "porch-canopy": {
+    "source": "assets/porch-canopy.blend",
+    "model": "models/porch-canopy.glb"
   }
 }

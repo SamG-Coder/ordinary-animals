@@ -1,5 +1,5 @@
 {
-  "assetCount": 66,
+  "assetCount": 70,
   "assets": [
     {
       "asset": "bed",
@@ -61,8 +61,8 @@
       "asset": "books",
       "source": "assets/books.blend",
       "model": "models/books.glb",
-      "editableObjects": 7,
-      "packedImages": 2,
+      "editableObjects": 49,
+      "packedImages": 0,
       "armatures": 0
     },
     {
@@ -93,7 +93,7 @@
       "asset": "storage-boxes",
       "source": "assets/storage-boxes.blend",
       "model": "models/storage-boxes.glb",
-      "editableObjects": 6,
+      "editableObjects": 39,
       "packedImages": 0,
       "armatures": 0
     },
@@ -253,7 +253,7 @@
       "asset": "floor-4m",
       "source": "assets/floor-4m.blend",
       "model": "models/floor-4m.glb",
-      "editableObjects": 1,
+      "editableObjects": 101,
       "packedImages": 2,
       "armatures": 0
     },
@@ -301,7 +301,7 @@
       "asset": "terrace-house",
       "source": "assets/terrace-house.blend",
       "model": "models/terrace-house.glb",
-      "editableObjects": 25,
+      "editableObjects": 46,
       "packedImages": 6,
       "armatures": 0
     },
@@ -309,7 +309,7 @@
       "asset": "clinic-building",
       "source": "assets/clinic-building.blend",
       "model": "models/clinic-building.glb",
-      "editableObjects": 19,
+      "editableObjects": 28,
       "packedImages": 6,
       "armatures": 0
     },
@@ -317,7 +317,7 @@
       "asset": "league-building",
       "source": "assets/league-building.blend",
       "model": "models/league-building.glb",
-      "editableObjects": 19,
+      "editableObjects": 28,
       "packedImages": 6,
       "armatures": 0
     },
@@ -526,6 +526,38 @@
       "source": "assets/rival.blend",
       "model": "models/rival.glb",
       "editableObjects": 35,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "radiator",
+      "source": "assets/radiator.blend",
+      "model": "models/radiator.glb",
+      "editableObjects": 23,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "socket",
+      "source": "assets/socket.blend",
+      "model": "models/socket.glb",
+      "editableObjects": 9,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "hall-table",
+      "source": "assets/hall-table.blend",
+      "model": "models/hall-table.glb",
+      "editableObjects": 11,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "porch-canopy",
+      "source": "assets/porch-canopy.blend",
+      "model": "models/porch-canopy.glb",
+      "editableObjects": 6,
       "packedImages": 2,
       "armatures": 0
     }

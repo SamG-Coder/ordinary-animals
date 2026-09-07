@@ -42,7 +42,7 @@ Graphics, brightness, sensitivity, and camera movement are adjustable and saved 
 
 ## Blender asset pipeline
 
-The active build contains **66 individual GLB assets plus a Blender-rendered HDR sky**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
+The active build contains **70 individual GLB assets plus a Blender-rendered HDR sky**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
 
 - `assets/`: separate `.blend` sources with packed images. Open a single tree, chair, door, animal, road segment, or building and edit it directly.
 - `game-assets/asset-catalog.json`: the source/export mapping and local collision dimensions.

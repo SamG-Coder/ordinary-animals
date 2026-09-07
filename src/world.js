@@ -82,10 +82,21 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
   for (const x of [-3, 3]) place("wall-4m", x, 4, 0, Math.PI, 0.5);
   // Half-width modules need full room height; compensate the instance scale in batching below.
   for (const item of roomLayout)
-    place(item.asset, item.x, item.z, item.y, 0, 1, false);
+    place(
+      item.asset,
+      item.x,
+      item.z,
+      item.y,
+      0,
+      1,
+      !["bedside-lamp", "desk-lamp", "curtains"].includes(item.asset),
+    );
   place("school-backpack", 1.25, 3.12, 0, -0.35);
   place("school-shoes", 0.7, 2.95, 0, 0.2);
   place("notice-board", -3.86, -0.5, 0.3, Math.PI / 2);
+  place("radiator", 0.6, -3.78);
+  place("socket", -0.5, -3.88, 0.25);
+  place("socket", 3.87, 1.8, 0.25, -Math.PI / 2);
   // A hallway between the bedroom and front door, instead of exiting directly onto the lawn.
   place("floor-4m", 0, 6);
   place("ceiling-4m", 0, 6, 3.0);
@@ -96,6 +107,8 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
   place("exterior-wall-4m", -2.13, 6, 0, Math.PI / 2);
   place("exterior-wall-4m", 2.13, 6, 0, Math.PI / 2);
   place("porch-step", 0, 8.55);
+  place("porch-canopy", 0, 8.6);
+  place("hall-table", -1.74, 6, 0, Math.PI / 2);
   for (let z = 10; z < 20; z += 2) place("path-2m", 0, z);
   place("clinic-building", 24, -23);
   for (const [x, z] of [
@@ -115,7 +128,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
   for (let z = -16; z <= 18; z += 12) place("road-straight-12m", 12, z);
   for (let x = -84; x <= 84; x += 12)
     place("road-straight-12m", x, 20, 0, Math.PI / 2);
-  place("road-junction-12m", 12, 20, 0.006);
+  place("road-junction-12m", 12, 20, 0.05);
   for (let x = -76; x < 78; x += 4) {
     place("pavement-4m", x, 14.8, 0, Math.PI / 2);
     place("pavement-4m", x, 25.2, 0, -Math.PI / 2);
@@ -196,7 +209,7 @@ export function assembleWorld(scene, assets, catalog, roomLayout) {
         true,
         step / 12,
       );
-    place("road-junction-12m", ax, az, 0.014);
+    place("road-junction-12m", ax, az, 0.05);
   }
   for (let x = -580; x <= 580; x += 40)
     for (let z = -580; z <= 580; z += 40) place("ground-tile-40m", x, z);
