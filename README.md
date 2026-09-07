@@ -1,120 +1,98 @@
 # Ordinary Animals
 
-### Extraordinary liability.
+A dark first-person animal-battling parody. You are ten years old. A man with a white coat has decided that sending children out to collect and battle ordinary animals counts as education.
 
-**You’re ten. He’s apparently a professor. That’s apparently enough to save the neighborhood.**
+**[Play the development build](https://samg-coder.github.io/ordinary-animals/)** · Desktop recommended · MIT © 2026 SamGCoder
 
-[Play in your browser](https://SamG-Coder.github.io/ordinary-animals/) · [MIT license](LICENSE) · [Blender asset source](assets/ordinary-animals.blend)
+![The opening bedroom](docs/bedroom.png)
 
-![Ordinary Animals, a warm miniature neighborhood](docs/title.jpg)
+## The game
 
-A complete, compact single-player animal adventure built with **Three.js**, with original models and animation authored in **Blender**. Choose an ordinary cat, dog, or hamster. Explore three regions, make ten friends, and become an Ordinary Animal Master under the extremely unofficial supervision of Professor Gary.
+Wake up in your bedroom in Wickmere. Read your mother's letter, leave through the hallway, and meet Gary at the county research office. Choose a cat, dog, or hamster, battle your neighbour, capture wild animals, and challenge eight district leaders before the four-round county championship.
 
-Gary’s laboratory is a garage. His doctorate is a mindset. Your hamster may have offshore interests.
+Exploration and battles use the child's first-person viewpoint. The tone comes from rain, cold dawn light, empty streets, institutional notices, and the absurd confidence of adults who should know better. Combat is turn based: four moves per species, HP, speed, type advantages, status effects, healing, switching, fainting, and capture odds based on the wild animal's remaining HP. A party holds six animals.
 
-## The adventure
+Campaign progress saves in this browser. Defeat returns you to your room with a healed party. Your bedroom and Gary offer free recovery. Earned district offices unlock travel through the journal map.
 
-- **Choose your colleague:** Miso the cat, Biscuit the dog, or Tax Evasion the hamster. Every starter can finish the campaign.
-- **Three chapters:** Little Ditch, Mildly Inconvenient Woods, and Almost-on-Sea.
-- **Nine regional encounters:** a pigeon, cat, raccoon, rabbit, fox, tortoise, duck, sheep, and goat.
-- **A final championship:** Gary’s hamster, Municipal Bond, finally competes in something.
-- **A proper ending:** earn your certificate, see the credits, and keep exploring the unlocked regions.
-- **A persistent journal:** earned stamps, starter, chapter, and completion save locally on your device. The field guide allows travel to unlocked regions.
-- **Gentle turn-based encounters:** read the animal’s mood and build trust with reassurance, snacks, and play. Failed encounters can be retried with full confidence. No animal harm.
-- **A miniature 3D world:** warm lighting, soft shadows, animated animals, a following companion, ground navigation around obstacles, and optional synthesized music and sound effects.
-- **Desktop and touch controls**, responsive menus, keyboard focus handling, and reduced-motion support.
+## Current status
 
-![Choose a cat, dog, or hamster](docs/starters.jpg)
+This is an actively developed playable build, not a finished photorealistic release. The opening has received the most detailed art pass. The 1.2 km square region has roads, encounter sites, eight district destinations, and a complete campaign progression system; its distant districts still reuse architecture and need more individual environments. Human faces, animal deformation, terrain variety, and interactions inside additional buildings remain art and design priorities.
+
+Verified in the browser:
+
+- A fresh save: bedroom → letter → both doors → clinic → starter → rival victory.
+- Save-fixture regression scenarios: weakened wild capture, inventory consumption, party persistence across reload, defeat and recovery, and the final multi-animal championship round through the ending and return home.
+- All eight animal exports: idle, walk, attack, hit, and faint clips, with skeletal skins and visual contact sheets.
+
+The ending scenario uses a late-game save fixture. It is not a claim that the entire campaign has been manually played from a fresh save.
 
 ## Controls
 
 | Action | Control |
 | --- | --- |
-| Walk | WASD or arrow keys |
-| Walk to a place | Click or tap clear ground |
-| Talk / meet an animal | E, or the interaction button |
-| Mobile movement | On-screen direction pad |
-| Journal and region travel | Field guide |
-| Close guide / leave encounter | Escape |
-| Return near Gary | House button |
-| Music and sound | Note button in the top right |
+| Walk / sprint | WASD / Shift |
+| Look | Mouse; click the world to lock the pointer |
+| Release pointer | Escape |
+| Look fallback | Drag or arrow keys |
+| Interact | E |
+| Torch | F |
+| Journal, map, party, settings | J |
 
-After earning three stamps in a region, talk to Gary to continue. After all nine regional stamps, he introduces the final challenge. Snacks are unlimited; their supply is the one thing Gary planned competently.
+Graphics, brightness, sensitivity, and camera movement are adjustable and saved separately from campaign progress. Mobile has touch controls and defaults to the performance setting; the intended experience is on desktop.
 
-This is a short, complete campaign, rather than a large open-world RPG. The starter personalities are cosmetic; the encounter rules are shared. Saving is local to your browser, not a cloud account. A current browser with WebGL and hardware acceleration is required. Google Fonts are optional; local serif and sans-serif fallbacks are provided.
+## Blender asset pipeline
 
-## Run locally
+The active build contains **66 individual GLB assets plus a Blender-rendered HDR sky**. Every active world mesh, material image, and character animation originates in a corresponding editable Blender source. No downloaded scenery, stock animals, or runtime primitive scenery is used.
 
-Requires Node.js 22.12+ (Node.js 24 is also supported).
+- `assets/`: separate `.blend` sources with packed images. Open a single tree, chair, door, animal, road segment, or building and edit it directly.
+- `game-assets/asset-catalog.json`: the source/export mapping and local collision dimensions.
+- `game-assets/bedroom-layout.json`: placement data for separate furnishings.
+- `src/world.js`: placement and spatial batching of the exported modules. It does not generate world mesh primitives.
+- `src/main.js`: first-person input, lighting, animation playback, encounters, battle presentation, UI, audio, and saves.
+- `src/rules.js`: combat, progression definitions, and save validation.
+
+To export **one edited asset** with Blender on your PATH:
+
+```sh
+blender -b --python scripts/reexport_asset.py -- desk
+```
+
+The source authoring scripts support independent passes. For example, to rebuild only the cat:
+
+```sh
+blender -b --python scripts/author_animals.py -- cat
+blender -b --python scripts/refine_animals.py -- cat
+blender -b --python scripts/coat_materials.py -- cat
+```
+
+`author_blender.py` and `modular_assets.py` are the initial library factories. `detail_assets.py`, `refine_people.py`, and `author_sky.py` are subsequent Blender art passes. `pack_sources.py` packs used images and compresses the editable sources. A normal art edit only requires re-exporting its own file; the world is assembled from those reusable pieces.
+
+The production build copies only catalog-listed assets and the sky manifest. Historical files under `public/`, working texture folders, and the unused monolithic bedroom export are not served or shipped.
+
+## Run and verify
+
+Node 22 or newer:
 
 ```sh
 npm ci
-npm run dev
+npm run dev -- --port 5174
 ```
 
-Open the local URL printed by Vite. To build the GitHub Pages version:
+In a second terminal:
 
 ```sh
 npm test
+node scripts/opening-playtest.mjs
+node scripts/campaign-scenarios.mjs
+node scripts/animal-visual-check.mjs
+node scripts/interface-check.mjs
 npm run build
-npm run preview
 ```
 
-The Vite base is relative, so the build works under a GitHub Pages repository path. The repository’s GitHub Actions workflow tests and builds each push to `main`, then deploys `dist` using GitHub Pages.
+The browser scripts use Playwright with the locally installed Microsoft Edge channel and write screenshots to ignored `artifacts/`. Their input helpers use ordinary pointer and keyboard events; the game's development inspection API is read-only and is removed from production builds.
 
-## Blender assets
+GitHub Actions tests and builds `main`, then deploys `dist/` to GitHub Pages. The game uses Three.js and Vite. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-`assets/ordinary-animals.blend` contains the editable asset library, arranged in a labeled grid of collections. There are **19 exported GLB assets** and **11 rendered animal portraits**. The `.blend`, generated models, portrait renders, scripts, and original game code are covered by the project’s MIT license.
+## License
 
-The asset pipeline is reproducible. From the repository root, using Blender 5.2 or a compatible version:
-
-```sh
-blender --background --factory-startup --python scripts/build_assets.py
-blender --background --python scripts/render_portraits.py
-```
-
-The first script models the animals, people, buildings, trees, fences, bench, and flowers, creates idle animation, exports GLBs, and saves the source `.blend`. The second renders transparent portraits using Cycles. No downloaded character assets or proprietary game assets are used.
-
-Models load through Three.js GLTFLoader and their Blender animation plays through AnimationMixer. Runtime movement adds a simple walking bounce. Static scene meshes are batched by material to reduce draw calls. Town placement, terrain, paths, bridge, pond, and some simple props are assembled in Three.js.
-
-## Validation
-
-```sh
-npm test
-```
-
-The unit suite covers every encounter’s victory path, failure and retry, final challenge balance, save validation, chapter locks, and obstacle navigation.
-
-For browser checks, first run the local dev server on port 5173, then:
-
-```sh
-node scripts/browser-check.mjs
-node scripts/campaign-check.mjs
-node scripts/mobile-check.mjs
-node scripts/retry-check.mjs
-```
-
-On Windows these use installed Microsoft Edge through Playwright. Elsewhere run `npx playwright install chromium` first. The campaign check starts with a new save and walks through all three chapters using actual UI input, wins all encounters, reloads to check persistence, reaches the certificate, and revisits an unlocked region. A development-only read-only helper projects world coordinates for the browser tests; production builds do not expose it.
-
-## Project map
-
-| Path | Purpose |
-| --- | --- |
-| `src/game.js` | Campaign, animal personalities, encounters, save validation |
-| `src/main.js` | Three.js world, input, UI, audio, progression |
-| `src/navigation.js` | Grid pathfinding around obstacles |
-| `src/style.css` | Responsive game interface |
-| `scripts/build_assets.py` | Blender modeling and GLB export |
-| `scripts/render_portraits.py` | Blender portrait rendering |
-| `assets/ordinary-animals.blend` | Editable original asset library |
-| `public/models` | Game-ready GLB exports |
-| `public/portraits` | Rendered animal portraits |
-| `.github/workflows/pages.yml` | Automated public build and deployment |
-
-## Credits and license
-
-**Copyright © 2026 SamGCoder. MIT licensed.**
-
-Original game, characters, writing, models, and asset pipeline. Third-party libraries retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
-
-An independent, original animal-adventure parody. Not affiliated with Pokémon, Nintendo, Game Freak, or an actual educational institution.
+Original code, Blender assets, textures, and authored animations are released under the [MIT license](LICENSE), credited to **SamGCoder**. This is an independent parody with original characters, locations, writing, and assets.

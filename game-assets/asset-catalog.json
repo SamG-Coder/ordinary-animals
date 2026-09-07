@@ -1,0 +1,360 @@
+{
+  "bed": {
+    "model": "models/bed.glb",
+    "source": "assets/bed.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 1.65,
+        "d": 2.4
+      }
+    ]
+  },
+  "bedside-table": {
+    "model": "models/bedside-table.glb",
+    "source": "assets/bedside-table.blend"
+  },
+  "bedside-lamp": {
+    "model": "models/bedside-lamp.glb",
+    "source": "assets/bedside-lamp.blend"
+  },
+  "desk": {
+    "model": "models/desk.glb",
+    "source": "assets/desk.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 2.8,
+        "d": 1.02
+      }
+    ]
+  },
+  "desk-lamp": {
+    "model": "models/desk-lamp.glb",
+    "source": "assets/desk-lamp.blend"
+  },
+  "letter": {
+    "model": "models/letter.glb",
+    "source": "assets/letter.blend"
+  },
+  "radio": {
+    "model": "models/radio.glb",
+    "source": "assets/radio.blend"
+  },
+  "books": {
+    "model": "models/books.glb",
+    "source": "assets/books.blend"
+  },
+  "chair": {
+    "model": "models/chair.glb",
+    "source": "assets/chair.blend"
+  },
+  "wardrobe": {
+    "model": "models/wardrobe.glb",
+    "source": "assets/wardrobe.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 1.05,
+        "d": 1.25
+      }
+    ]
+  },
+  "rug": {
+    "model": "models/rug.glb",
+    "source": "assets/rug.blend"
+  },
+  "storage-boxes": {
+    "model": "models/storage-boxes.glb",
+    "source": "assets/storage-boxes.blend"
+  },
+  "calendar": {
+    "model": "models/calendar.glb",
+    "source": "assets/calendar.blend"
+  },
+  "shoes": {
+    "model": "models/shoes.glb",
+    "source": "assets/shoes.blend"
+  },
+  "curtains": {
+    "model": "models/curtains.glb",
+    "source": "assets/curtains.blend"
+  },
+  "window-interior": {
+    "model": "models/window-interior.glb",
+    "source": "assets/window-interior.blend"
+  },
+  "door": {
+    "model": "models/door.glb",
+    "source": "assets/door.blend"
+  },
+  "torch": {
+    "model": "models/torch.glb",
+    "source": "assets/torch.blend"
+  },
+  "carrier": {
+    "model": "models/carrier.glb",
+    "source": "assets/carrier.blend"
+  },
+  "cat": {
+    "model": "models/cat.glb",
+    "source": "assets/cat.blend"
+  },
+  "dog": {
+    "model": "models/dog.glb",
+    "source": "assets/dog.blend"
+  },
+  "hamster": {
+    "model": "models/hamster.glb",
+    "source": "assets/hamster.blend"
+  },
+  "rat": {
+    "model": "models/rat.glb",
+    "source": "assets/rat.blend"
+  },
+  "fox": {
+    "model": "models/fox.glb",
+    "source": "assets/fox.blend"
+  },
+  "rabbit": {
+    "model": "models/rabbit.glb",
+    "source": "assets/rabbit.blend"
+  },
+  "raccoon": {
+    "model": "models/raccoon.glb",
+    "source": "assets/raccoon.blend"
+  },
+  "goat": {
+    "model": "models/goat.glb",
+    "source": "assets/goat.blend"
+  },
+  "gary": {
+    "model": "models/gary.glb",
+    "source": "assets/gary.blend"
+  },
+  "wall-4m": {
+    "model": "models/wall-4m.glb",
+    "source": "assets/wall-4m.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 4,
+        "d": 0.18
+      }
+    ]
+  },
+  "wall-door-4m": {
+    "model": "models/wall-door-4m.glb",
+    "source": "assets/wall-door-4m.blend",
+    "colliders": [
+      {
+        "x": -1.36,
+        "z": 0,
+        "w": 1.28,
+        "d": 0.18
+      },
+      {
+        "x": 1.36,
+        "z": 0,
+        "w": 1.28,
+        "d": 0.18
+      }
+    ]
+  },
+  "wall-window-4m": {
+    "model": "models/wall-window-4m.glb",
+    "source": "assets/wall-window-4m.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 4,
+        "d": 0.18
+      }
+    ]
+  },
+  "floor-4m": {
+    "model": "models/floor-4m.glb",
+    "source": "assets/floor-4m.blend"
+  },
+  "ceiling-4m": {
+    "model": "models/ceiling-4m.glb",
+    "source": "assets/ceiling-4m.blend"
+  },
+  "exterior-wall-4m": {
+    "model": "models/exterior-wall-4m.glb",
+    "source": "assets/exterior-wall-4m.blend"
+  },
+  "roof-4m": {
+    "model": "models/roof-4m.glb",
+    "source": "assets/roof-4m.blend"
+  },
+  "window-exterior": {
+    "model": "models/window-exterior.glb",
+    "source": "assets/window-exterior.blend"
+  },
+  "porch-step": {
+    "model": "models/porch-step.glb",
+    "source": "assets/porch-step.blend"
+  },
+  "terrace-house": {
+    "model": "models/terrace-house.glb",
+    "source": "assets/terrace-house.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 8,
+        "d": 7
+      }
+    ]
+  },
+  "clinic-building": {
+    "model": "models/clinic-building.glb",
+    "source": "assets/clinic-building.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 12,
+        "d": 10
+      }
+    ]
+  },
+  "league-building": {
+    "model": "models/league-building.glb",
+    "source": "assets/league-building.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 14,
+        "d": 12
+      }
+    ]
+  },
+  "road-straight-12m": {
+    "model": "models/road-straight-12m.glb",
+    "source": "assets/road-straight-12m.blend"
+  },
+  "road-junction-12m": {
+    "model": "models/road-junction-12m.glb",
+    "source": "assets/road-junction-12m.blend"
+  },
+  "path-2m": {
+    "model": "models/path-2m.glb",
+    "source": "assets/path-2m.blend"
+  },
+  "pavement-4m": {
+    "model": "models/pavement-4m.glb",
+    "source": "assets/pavement-4m.blend"
+  },
+  "ground-tile-40m": {
+    "model": "models/ground-tile-40m.glb",
+    "source": "assets/ground-tile-40m.blend"
+  },
+  "ground-mound-40m": {
+    "model": "models/ground-mound-40m.glb",
+    "source": "assets/ground-mound-40m.blend"
+  },
+  "pine-1": {
+    "model": "models/pine-1.glb",
+    "source": "assets/pine-1.blend"
+  },
+  "pine-2": {
+    "model": "models/pine-2.glb",
+    "source": "assets/pine-2.blend"
+  },
+  "pine-3": {
+    "model": "models/pine-3.glb",
+    "source": "assets/pine-3.blend"
+  },
+  "birch": {
+    "model": "models/birch.glb",
+    "source": "assets/birch.blend"
+  },
+  "grass-clump": {
+    "model": "models/grass-clump.glb",
+    "source": "assets/grass-clump.blend"
+  },
+  "rock": {
+    "model": "models/rock.glb",
+    "source": "assets/rock.blend"
+  },
+  "fence-3m": {
+    "model": "models/fence-3m.glb",
+    "source": "assets/fence-3m.blend"
+  },
+  "streetlamp": {
+    "model": "models/streetlamp.glb",
+    "source": "assets/streetlamp.blend"
+  },
+  "utility-pole": {
+    "model": "models/utility-pole.glb",
+    "source": "assets/utility-pole.blend"
+  },
+  "wire-span-16m": {
+    "model": "models/wire-span-16m.glb",
+    "source": "assets/wire-span-16m.blend"
+  },
+  "rain": {
+    "model": "models/rain.glb",
+    "source": "assets/rain.blend"
+  },
+  "wheelie-bin": {
+    "model": "models/wheelie-bin.glb",
+    "source": "assets/wheelie-bin.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 0.62,
+        "d": 0.7
+      }
+    ]
+  },
+  "storm-drain": {
+    "model": "models/storm-drain.glb",
+    "source": "assets/storm-drain.blend"
+  },
+  "puddle": {
+    "model": "models/puddle.glb",
+    "source": "assets/puddle.blend"
+  },
+  "fallen-leaves": {
+    "model": "models/fallen-leaves.glb",
+    "source": "assets/fallen-leaves.blend"
+  },
+  "county-sign": {
+    "model": "models/county-sign.glb",
+    "source": "assets/county-sign.blend",
+    "colliders": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 1.8,
+        "d": 0.15
+      }
+    ]
+  },
+  "notice-board": {
+    "model": "models/notice-board.glb",
+    "source": "assets/notice-board.blend"
+  },
+  "school-backpack": {
+    "model": "models/school-backpack.glb",
+    "source": "assets/school-backpack.blend"
+  },
+  "school-shoes": {
+    "model": "models/school-shoes.glb",
+    "source": "assets/school-shoes.blend"
+  },
+  "rival": {
+    "model": "models/rival.glb",
+    "source": "assets/rival.blend"
+  }
+}

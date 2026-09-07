@@ -1,1069 +1,1761 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
+import { clone } from "three/addons/utils/SkeletonUtils.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
+import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import {
-  STARTERS,
-  ENCOUNTERS,
-  CHAPTERS,
+  SPECIES,
+  MOVES,
+  DISTRICTS,
   SAVE_KEY,
+  makeAnimal,
+  restore,
+  attack,
+  captureChance,
+  initialSave,
   parseSave,
-  startEncounter,
-  takeTurn,
-} from './game.js';
-import './style.css';
-import { findPath } from './navigation.js';
-
-const $ = (id) => document.getElementById(id);
-const base = import.meta.env.BASE_URL;
-const portrait = (name) => `${base}portraits/${name}.png`;
-let saved = null;
+  terrainHeight,
+} from "./rules.js";
+import "./style.css";
+import { assembleWorld } from "./world.js";
+const $ = (id) => document.getElementById(id),
+  base = import.meta.env.BASE_URL;
+const settingsKey = "ordinary-animals-settings";
+let settings = {};
 try {
-  saved = parseSave(localStorage.getItem(SAVE_KEY));
-} catch {
-  /* Private browsing remains playable. */
+  settings = JSON.parse(localStorage.getItem(settingsKey)) || {};
+} catch {}
+if (typeof settings !== "object" || Array.isArray(settings)) settings = {};
+function rememberSettings() {
+  try {
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+  } catch {}
 }
-let state = saved || { starter: null, stamps: [], chapter: 0, completed: false };
-let playing = false,
-  modal = null,
-  battle = null,
-  activeTarget = null,
-  moving = false;
-let dialogueQueue = [],
-  dialogueCallback = null,
-  toastTimer;
-let companion,
-  player,
-  world,
-  staticWorld,
-  dynamicWorld,
-  markers = [],
-  collisions = [],
-  mixers = [];
-let destination = null,
-  route = [],
-  footstepTimer = 0,
-  renderTime = 0;
-const keys = new Set();
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let state;
+try {
+  state = parseSave(localStorage.getItem(SAVE_KEY)) || initialSave();
+} catch {
+  state = initialSave();
+}
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf2efe4);
-scene.fog = new THREE.Fog(0xf2efe4, 45, 100);
-const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 150);
-const cameraTarget = new THREE.Vector3(0, 0, 0);
-const introPosition = new THREE.Vector3(24, 27, 32);
-camera.position.copy(introPosition);
+scene.background = new THREE.Color(0x18262e);
+scene.fog = new THREE.FogExp2(0x233138, 0.0045);
+const camera = new THREE.PerspectiveCamera(
+  68,
+  innerWidth / innerHeight,
+  0.1,
+  800,
+);
+camera.rotation.order = "YXZ";
+const position = new THREE.Vector3(
+  state.position.x ?? 0,
+  1.35,
+  state.position.z ?? 1.8,
+);
+let yaw = state.starter ? state.yaw : 0.34,
+  pitch = state.starter ? state.pitch : -0.045;
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({
     antialias: true,
-    alpha: false,
-    powerPreference: 'high-performance',
+    powerPreference: "high-performance",
   });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  $('world').appendChild(renderer.domElement);
 } catch (e) {
-  showError(
-    'This little world needs WebGL. Please enable hardware acceleration or try a current browser.',
-  );
+  $("error").hidden = false;
+  $("error").textContent =
+    "This game needs WebGL. Enable hardware acceleration and reload.";
   throw e;
 }
-scene.add(new THREE.HemisphereLight(0xfff7dd, 0x8a9e73, 1.8));
-const sun = new THREE.DirectionalLight(0xffe7bb, 2.8);
-sun.position.set(-13, 25, 12);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 70 });
-sun.shadow.bias = -0.0004;
-sun.shadow.normalBias = 0.045;
-sun.shadow.radius = 3;
-scene.add(sun);
-const fill = new THREE.DirectionalLight(0xcce4ff, 0.9);
-fill.position.set(10, 9, -12);
-scene.add(fill);
-const assets = {};
-const materials = new Map();
-function mat(color, roughness = 0.85) {
-  const key = `${color}-${roughness}`;
-  if (!materials.has(key)) materials.set(key, new THREE.MeshStandardMaterial({ color, roughness }));
-  return materials.get(key);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.info.autoReset = false;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+$("viewport").appendChild(renderer.domElement);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const contactShadows = new GTAOPass(scene, camera, innerWidth, innerHeight);
+contactShadows.updateGtaoMaterial({ radius: 0.6, thickness: 0.8, samples: 8 });
+contactShadows.blendIntensity = 0.75;
+composer.addPass(contactShadows);
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  0.19,
+  0.65,
+  0.95,
+);
+composer.addPass(bloom);
+composer.addPass(new SMAAPass());
+composer.addPass(new OutputPass());
+const ambient = new THREE.HemisphereLight(0xa6bfd1, 0x181e17, 0.6);
+scene.add(ambient);
+const moon = new THREE.DirectionalLight(0xb4d2e8, 0.8);
+moon.position.set(20, 30, -25);
+moon.castShadow = true;
+moon.shadow.mapSize.set(2048, 2048);
+Object.assign(moon.shadow.camera, {
+  left: -45,
+  right: 45,
+  top: 45,
+  bottom: -45,
+  near: 0.5,
+  far: 130,
+});
+moon.shadow.bias = -0.0002;
+moon.shadow.normalBias = 0.018;
+scene.add(moon, moon.target);
+const flashlight = new THREE.SpotLight(0xe2e8d2, 30, 45, Math.PI / 7, 0.6, 1.3);
+flashlight.castShadow = true;
+flashlight.shadow.mapSize.set(1024, 1024);
+flashlight.shadow.bias = -0.0002;
+flashlight.visible = false;
+scene.add(flashlight, flashlight.target);
+const battleLight = new THREE.PointLight(0xd6d9cd, 16, 16, 1.6);
+battleLight.visible = false;
+scene.add(battleLight);
+const streetLights = Array.from({ length: 4 }, () => {
+  const l = new THREE.PointLight(0xf5c18b, 38, 18, 1.65);
+  scene.add(l);
+  return l;
+});
+const assets = {},
+  actors = [],
+  targets = [],
+  keys = new Set();
+let worldInfo,
+  room,
+  region,
+  door,
+  frontDoor,
+  modularWorld,
+  frontOpen = false,
+  frontAngle = 0,
+  torch,
+  carrier,
+  companion,
+  playing = false,
+  modal = null,
+  battle = null,
+  activeTarget = null,
+  doorOpen = false,
+  doorAngle = 0,
+  time = 0,
+  stamina = 100,
+  toastTimer,
+  lookDrag = false,
+  lookSensitivity = Math.max(
+    0.001,
+    Math.min(0.006, Number(settings.sensitivity) || 0.0025),
+  ),
+  cameraMotion =
+    settings.motion ?? !matchMedia("(prefers-reduced-motion: reduce)").matches,
+  saveTimer = 0;
+let introDone = false,
+  dialogueLines = [],
+  dialogueCallback = null,
+  currentTab = "map",
+  soundOn = false,
+  audioContext,
+  noiseSource,
+  noiseGain,
+  footTimer = 0,
+  partySelection = false;
+const animalGroup = new THREE.Group();
+scene.add(animalGroup);
+function showError(error) {
+  console.error(error);
+  $("error").hidden = false;
+  $("error").textContent =
+    "An asset could not load. Reload to try again. " + error.message;
 }
-function mesh(geo, color, x, y, z, parent = staticWorld) {
-  const o = new THREE.Mesh(geo, mat(color));
-  o.position.set(x, y, z);
-  o.castShadow = true;
-  o.receiveShadow = true;
-  parent.add(o);
-  return o;
-}
-function box(x, y, z, w, h, d, color, parent = staticWorld) {
-  return mesh(new THREE.BoxGeometry(w, h, d), color, x, y, z, parent);
-}
-function sphere(x, y, z, sx, sy, sz, color, parent = staticWorld) {
-  const o = mesh(new THREE.SphereGeometry(1, 14, 10), color, x, y, z, parent);
-  o.scale.set(sx, sy, sz);
-  return o;
-}
-function cylinder(x, y, z, r, h, color, parent = staticWorld) {
-  return mesh(new THREE.CylinderGeometry(r, r, h, 40), color, x, y, z, parent);
-}
-function model(name, x = 0, z = 0, scale = 1, rotation = 0, animated = false) {
-  const obj = assets[name].scene.clone(true);
-  obj.position.set(x, 0.12, z);
-  obj.scale.setScalar(scale);
-  obj.rotation.y = rotation;
-  obj.traverse((o) => {
-    if (o.isMesh) {
-      o.castShadow = true;
-      o.receiveShadow = true;
-    }
-  });
-  (animated ? dynamicWorld : staticWorld).add(obj);
-  if (animated && assets[name].animations.length) {
-    const mixer = new THREE.AnimationMixer(obj);
-    for (const clip of assets[name].animations) mixer.clipAction(clip).play();
-    mixers.push(mixer);
-  }
-  return obj;
-}
-function label(text, x, y, z, width = 3.2, color = '#2d493b', paper = '#f8f1d9') {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 128;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = paper;
-  ctx.beginPath();
-  ctx.roundRect(4, 4, 504, 120, 15);
-  ctx.fill();
-  ctx.strokeStyle = '#c9cdb6';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.fillStyle = color;
-  ctx.font = 'bold 29px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 256, 66);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: true }));
-  sprite.position.set(x, y, z);
-  sprite.scale.set(width, width / 4, 1);
-  dynamicWorld.add(sprite);
-  return sprite;
-}
-function patch(x, z, w, d, color) {
-  const o = cylinder(x, 0.095, z, 1, 0.09, color);
-  o.scale.set(w / 2, 1, d / 2);
-  return o;
-}
-function lamp(x, z) {
-  cylinder(x, 1.1, z, 0.055, 2.2, 0x435449);
-  box(x, 2.17, z, 0.28, 0.35, 0.28, 0xffe5a0);
-  box(x, 2.38, z, 0.42, 0.08, 0.42, 0x435449);
-}
-function mergeStatic() {
-  staticWorld.updateMatrixWorld(true);
-  const buckets = new Map();
-  staticWorld.traverse((o) => {
-    if (!o.isMesh) return;
-    const g = o.geometry.clone();
-    g.applyMatrix4(o.matrixWorld);
-    for (const key of Object.keys(g.attributes))
-      if (!['position', 'normal', 'uv'].includes(key)) g.deleteAttribute(key);
-    if (!g.getAttribute('uv'))
-      g.setAttribute(
-        'uv',
-        new THREE.BufferAttribute(new Float32Array(g.getAttribute('position').count * 2), 2),
-      );
-    const key = o.material.uuid;
-    if (!buckets.has(key)) buckets.set(key, { material: o.material, geometries: [] });
-    buckets.get(key).geometries.push(g);
-  });
-  const batch = new THREE.Group();
-  for (const { material, geometries } of buckets.values()) {
-    const combined = mergeGeometries(geometries.map((g) => (g.index ? g.toNonIndexed() : g)));
-    if (combined) {
-      const o = new THREE.Mesh(combined, material);
-      o.castShadow = true;
-      o.receiveShadow = true;
-      batch.add(o);
-    }
-    geometries.forEach((g) => g.dispose());
-  }
-  world.remove(staticWorld);
-  staticWorld = batch;
-  world.add(batch);
-}
-function disposeWorld() {
-  if (!world) return;
-  scene.remove(world);
-  staticWorld.traverse((o) => {
-    if (o.isMesh) o.geometry.dispose();
-  });
-  dynamicWorld.traverse((o) => {
-    if (o.isSprite) {
-      o.material.map?.dispose();
-      o.material.dispose();
-    }
-  });
-  mixers.forEach((m) => m.stopAllAction());
-  mixers = [];
-}
-function buildWorld(chapter = 0) {
-  disposeWorld();
-  world = new THREE.Group();
-  staticWorld = new THREE.Group();
-  dynamicWorld = new THREE.Group();
-  world.add(staticWorld, dynamicWorld);
-  scene.add(world);
-  collisions = [];
-  markers = [];
-  const forest = chapter === 1,
-    coast = chapter === 2;
-  const grass = CHAPTERS[chapter].color;
-  const ground = cylinder(0, -0.7, 0, 17.4, 1.4, 0xc4b48d);
-  ground.scale.z = 0.81;
-  const top = cylinder(0, 0.015, 0, 17.5, 0.12, grass);
-  top.scale.z = 0.81;
-  const baseShadow = cylinder(0, -1.44, 0, 17.3, 0.05, 0xaaa788);
-  baseShadow.scale.z = 0.81;
-  box(0, 0.105, 0, 3.2, 0.08, 25.5, 0xe1ce9f);
-  box(0, 0.109, 3.2, 29, 0.08, 2.6, 0xe1ce9f);
-  box(0, 0.11, -6.5, 25, 0.08, 2.1, 0xe1ce9f);
-  for (let z = -12; z < 13; z += 1.3) {
-    box(-1.75, 0.15, z, 0.21, 0.12, 0.9, 0xf0dfb6);
-    box(1.75, 0.15, z, 0.21, 0.12, 0.9, 0xf0dfb6);
-  }
-  // An actual little pond, framed by stones and a timber bridge.
-  patch(7, 0, 10, 4.9, coast ? 0x86c5c7 : 0x78b7b1);
-  patch(7, -0.2, 8.9, 3.7, 0x8bc3bd).position.y += 0.014;
-  for (let i = 0; i < 16; i++) {
-    let a = (i / 16) * Math.PI * 2;
-    sphere(7 + Math.cos(a) * 4.8, 0.14, Math.sin(a) * 2.3, 0.32, 0.17, 0.23, 0xd9d3b5);
-  }
-  for (let i = 0; i < 11; i++) box(7, 0.26, -2 + i * 0.39, 2, 0.16, 0.32, 0xb38b57);
-  for (let x of [6, 8]) {
-    for (let z of [-2, 0, 2]) box(x, 0.65, z, 0.09, 1, 0.09, 0xe6d8b5);
-    box(x, 1.02, 0, 0.09, 0.09, 4.2, 0xe6d8b5);
-  }
-  collisions.push({ x: 7, z: 0, w: 9.2, d: 4.3, bridge: true });
-  const houses = forest
-    ? [
-        [-5, -5.4, 'garage', 0.86],
-        [10, -8, 'house', 0.65],
-      ]
-    : [
-        [-5, -5.4, 'garage', 1],
-        [-10, -0.8, 'house', 0.85],
-        [-3, 9.7, 'house', 0.87],
-        [1.5, 9.3, 'house', 0.82],
-        ...(coast ? [] : [[10, -8.6, 'house', 0.9]]),
-      ];
-  for (const [x, z, name, s] of houses) {
-    model(name, x, z, s);
-    collisions.push({ x, z, w: 3.8 * s, d: 3.15 * s });
-  }
-  label(
-    forest ? 'GARY’S FIELD STATION' : coast ? 'GARY’S “MARINE LAB”' : 'GARY’S “LAB”',
-    -5,
-    3.9,
-    -4,
-    3.2,
-  );
-  const professor = model('professor', -3.0, -2.1, 0.9, Math.PI * 0.12);
-  markers.push({ id: 'gary', x: -3, z: -2.1, obj: professor, label: 'Talk to Gary' });
-  const trees = [
-    [-13, -6],
-    [-12, -9],
-    [-9, -10],
-    [-1, -11],
-    [3, -10],
-    [6, -11],
-    [12, -5],
-    [14, 0],
-    [12, 7],
-    [10, 10],
-    [6, 11],
-    [-2, 11],
-    [-11, 7],
-    [-13, 3],
-    [-14, -1],
-  ];
-  if (forest)
-    trees.push(
-      [-8, -8],
-      [-9, -6],
-      [-11, 0],
-      [-11, 5],
-      [-5, 8],
-      [2, 8],
-      [4, -8],
-      [11, 4],
-      [1, -10],
-      [-4, -10],
-    );
-  trees.forEach(([x, z], i) => {
-    const s = (forest ? 1.22 : 1) * (0.8 + (i % 4) * 0.12);
-    model('tree', x, z, s, i);
-    collisions.push({ x, z, w: 0.6, d: 0.6 });
-  });
-  for (let i = 0; i < 30; i++) {
-    let a = i * 2.399;
-    let r = 6 + ((i * 7) % 10);
-    let x = Math.cos(a) * r,
-      z = Math.sin(a) * r * 0.76;
-    if (Math.abs(x) > 2.7 && Math.abs(z - 3.2) > 1.9 && !(x > 2 && Math.abs(z) < 3))
-      model('flowers', x, z, 1.4, i);
-  }
-  for (let i = 0; i < 9; i++) {
-    model('fence', -13 + i * 1.85, -3.2, 0.9);
-  }
-  for (let i = 0; i < 4; i++) model('fence', -9.5 + i * 1.65, 7.1, 0.85);
-  model('bench', 8.5, 5.2, 1.1, 0.1);
-  model('bench', -3.5, 5.4, 1.1, Math.PI / 2);
-  for (const [x, z] of [
-    [-2.2, 5.2],
-    [2.3, -5],
-    [-11, 4.8],
-    [11, 4.5],
-  ])
-    lamp(x, z);
-  // Small environmental stories: a garage desk, lost ball, mailboxes, recycling bins.
-  box(-2.7, 0.68, -4.2, 1.1, 0.13, 0.7, 0x9a794f);
-  for (const x of [-3.12, -2.28]) box(x, 0.36, -4.2, 0.08, 0.6, 0.6, 0x6e795f);
-  cylinder(-2.9, 0.84, -4.2, 0.12, 0.22, 0xf1e6c7);
-  box(-2.45, 0.8, -4.2, 0.25, 0.05, 0.36, 0x6e9288);
-  sphere(-6.8, 0.34, 4.8, 0.23, 0.23, 0.23, 0xd88a59);
-  for (const x of [9.5, 10.3]) {
-    box(x, 0.53, -4.7, 0.62, 0.85, 0.68, coast ? 0x738f91 : 0x52766b);
-    box(x, 0.99, -4.7, 0.69, 0.08, 0.75, 0x355e52);
-  }
-  for (const [x, z] of [
-    [-8.4, 1.8],
-    [-4.1, 7],
-    [3, 7.3],
-  ]) {
-    box(x, 0.55, z, 0.07, 0.9, 0.07, 0x93734d);
-    box(x, 1.05, z, 0.42, 0.28, 0.29, 0xd4835f);
-  }
-  if (forest) {
-    for (let i = 0; i < 9; i++) {
-      const x = -8 + i * 0.5,
-        z = -1 + Math.sin(i) * 0.6;
-      cylinder(x, 0.25, z, 0.06, 0.3, 0xe9ddbb);
-      sphere(x, 0.4, z, 0.17, 0.08, 0.17, 0xba6142);
-    }
-  }
-  if (coast) {
-    // Lighthouse and shoreline palette make the third chapter its own place.
-    cylinder(11, 1.9, -9, 0.66, 3.6, 0xf6e5bf);
-    cylinder(11, 2.5, -9, 0.69, 0.44, 0xc96e48);
-    cylinder(11, 3.85, -9, 0.9, 0.24, 0x365751);
-    cylinder(11, 4.15, -9, 0.58, 0.42, 0xf5cc6c);
-    cylinder(11, 4.45, -9, 0.85, 0.18, 0x365751);
-    for (let i = 0; i < 8; i++) patch(11 - i * 0.6, 9 + i * 0.15, 2.4, 1.5, 0xe3d4a9);
-  }
-  for (const e of ENCOUNTERS.filter((e) => e.chapter === chapter)) {
-    const animal = model(e.model, e.x, e.z, e.model === 'pigeon' ? 1.3 : 1, Math.PI * 0.15, true);
-    const ring = mesh(
-      new THREE.TorusGeometry(0.75, 0.035, 8, 48),
-      state.stamps.includes(e.id) ? 0x6b9360 : 0xffcf67,
-      e.x,
-      0.18,
-      e.z,
-      dynamicWorld,
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.castShadow = false;
-    const flag = label(
-      state.stamps.includes(e.id) ? '✓  FRIEND' : `✦  ${e.title.toUpperCase()}`,
-      e.x,
-      2.15,
-      e.z,
-      3.4,
-    );
-    markers.push({
-      ...e,
-      obj: animal,
-      ring,
-      flag,
-      label: state.stamps.includes(e.id) ? `Visit ${e.name}` : `Meet ${e.name}`,
-    });
-  }
-  player = model('player', 0, 3.3, 0.8, 0, true);
-  if (state.starter) companion = model(state.starter, 1.1, 4, 0.72, 0, true);
-  else companion = null;
-  if (!playing) {
-    for (const [i, name] of ['cat', 'dog', 'hamster'].entries())
-      model(name, -2 + i * 1.15, 0.2, 0.75, 0, true);
-  }
-  // Soft tufts and stepping stones break the straight paths.
-  for (let i = 0; i < 65; i++) {
-    let a = i * 2.399,
-      r = 4 + ((i * 11) % 12),
-      x = Math.cos(a) * r,
-      z = Math.sin(a) * r * 0.78;
-    if (
-      Math.abs(x) > 2.7 &&
-      Math.abs(z - 3.2) > 1.7 &&
-      Math.abs(z + 6.5) > 1.5 &&
-      !(x > 2 && Math.abs(z) < 3)
-    )
-      sphere(x, 0.15, z, 0.18, 0.13, 0.14, forest ? 0x5f8653 : 0x849c59);
-  }
-  mergeStatic();
-  destination = null;
-  route = [];
-  activeTarget = null;
-  if (playing) updateHUD();
-}
-
 function save() {
+  state.position = { x: position.x, z: position.z };
+  state.yaw = yaw;
+  state.pitch = pitch;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch {
-    toast('Progress could not be saved in this browser. You can keep playing.');
+    toast("Saving is unavailable in this browser session.");
   }
 }
-function showError(text) {
-  $('loading-error').hidden = false;
-  $('loading-error').textContent = text;
-}
 function toast(message) {
-  $('toast').textContent = message;
-  $('toast').classList.add('visible');
+  $("toast").textContent = message;
+  $("toast").classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 3800);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 4000);
 }
-let priorFocus = null;
-function openModal(id) {
-  if (!modal) priorFocus = document.activeElement;
-  else $(modal).hidden = true;
+function setupMesh(root) {
+  root.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      if (o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) {
+          if (m.normalScale) m.normalScale.set(0.22, 0.22);
+          if (m.map)
+            m.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        }
+      }
+    }
+    if (o.isLight) {
+      o.intensity = Math.min(6, o.intensity * 0.0035);
+      o.distance = 7;
+      o.decay = 1.6;
+      o.castShadow = false;
+    }
+  });
+  return root;
+}
+function asset(name, x = 0, z = 0, scale = 1, parent = scene) {
+  const root = setupMesh(clone(assets[name].scene));
+  root.position.set(x, 0, z);
+  root.scale.setScalar(scale);
+  parent.add(root);
+  return root;
+}
+function actor(species, x, z, level = 5, hostile = false) {
+  const root = asset(species, x, z, SPECIES[species]?.scale || 1, animalGroup);
+  const mixer = new THREE.AnimationMixer(root),
+    actions = {};
+  for (const clip of assets[species].animations) {
+    let name =
+      ["Idle", "Walk", "Attack", "Hit", "Faint"].find((n) =>
+        clip.name.toLowerCase().includes(n.toLowerCase()),
+      ) || "Idle";
+    actions[name] = mixer.clipAction(clip);
+  }
+  const a = {
+    root,
+    mixer,
+    actions,
+    species,
+    home: new THREE.Vector3(x, 0, z),
+    phase: Math.random() * 6,
+    clip: null,
+    level,
+    hostile,
+  };
+  actors.push(a);
+  play(a, "Idle");
+  return a;
+}
+function person(name, x, z) {
+  const root = asset(name, x, z);
+  const mixer = new THREE.AnimationMixer(root);
+  for (const clip of assets[name].animations) mixer.clipAction(clip).play();
+  actors.push({
+    root,
+    mixer,
+    clip: "Idle",
+    actions: {},
+    stationary: true,
+    person: true,
+  });
+  return root;
+}
+function play(a, name, once = false) {
+  if (!a) return;
+  const action = a.actions[name] || a.actions.Idle;
+  if (!action) return;
+  if (a.clip === name && !once) return;
+  for (const other of Object.values(a.actions))
+    if (other !== action) other.fadeOut(0.15);
+  action
+    .reset()
+    .setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
+  action.clampWhenFinished = once;
+  action.fadeIn(0.15).play();
+  a.clip = name;
+}
+function floor(x, z) {
+  return 0;
+}
+function collision(x, z) {
+  if (Math.abs(x) > 580 || Math.abs(z) > 580) return true;
+  if (!frontOpen && Math.abs(x) < 0.97 && Math.abs(z - 8) < 0.25) return true;
+  if (!doorOpen && Math.abs(x) < 0.97 && Math.abs(z - 4) < 0.25) return true;
+  return worldInfo.collisions.some(
+    (c) =>
+      Math.abs(x - c.x) < c.w / 2 + 0.22 && Math.abs(z - c.z) < c.d / 2 + 0.22,
+  );
+}
+function addTarget(id, x, z, name, fn, radius = 2.5, y = 0.8) {
+  const target = { id, x, z, name, fn, radius, y };
+  targets.push(target);
+  return target;
+}
+function setObjective() {
+  let message, goal;
+  if (!state.note) {
+    message = "Read the letter on your desk.";
+    goal = { x: -1.35, z: -2.6, name: "THE LETTER" };
+  } else if (!state.starter) {
+    message = "Leave your room. Meet Gary at the research clinic.";
+    goal = { x: 24, z: -15, name: "GARY’S CLINIC" };
+  } else if (!state.wins.includes("rival")) {
+    message =
+      "Your neighbour has challenged you. Defeat your rival outside the clinic.";
+    goal = { x: 13, z: -9, name: "YOUR RIVAL" };
+  } else if (state.badges.length < 8) {
+    const i = DISTRICTS.findIndex((_, i) => !state.badges.includes(i)),
+      t = worldInfo.towns[i];
+    message = `Earn the ${DISTRICTS[i].badge} Badge in ${DISTRICTS[i].name}.`;
+    goal = { x: t.gymX, z: t.gymZ, name: DISTRICTS[i].name.toUpperCase() };
+  } else if (!state.completed) {
+    message = `Return to Gary. County championship: ${state.league}/4 rounds complete.`;
+    goal = { x: 24, z: -15, name: "COUNTY CHAMPIONSHIP" };
+  } else {
+    message = "You are an Animal Master. Your mother still expects you home.";
+    goal = { x: 0, z: 2, name: "HOME" };
+  }
+  $("objective-text").textContent = message;
+  return goal;
+}
+function updateHUD() {
+  const pet = state.party.find((p) => p.hp > 0) || state.party[0];
+  $("party-hud").innerHTML = pet
+    ? `${pet.nickname.toUpperCase()} <small>LV ${pet.level} · ${pet.hp}/${pet.maxHp} HP &nbsp; / &nbsp; ${state.party.length} IN PARTY</small>`
+    : "AGE 10 <small>NO ANIMALS · NO SUPERVISION</small>";
+  setObjective();
+}
+function open(id) {
   modal = id;
   $(id).hidden = false;
-  destination = null;
-  route = [];
   keys.clear();
-  setTimeout(() => $(id).querySelector('button:not([disabled])')?.focus(), 50);
+  document.exitPointerLock?.();
+  lookDrag = false;
+  setTimeout(() => $(id).querySelector("button:not([disabled])")?.focus(), 20);
 }
-function closeModal() {
+function close() {
   if (modal) $(modal).hidden = true;
   modal = null;
-  priorFocus?.focus();
+  partySelection = false;
 }
-function speak(lines, callback) {
-  dialogueQueue = [...lines];
+function speak(speaker, lines, callback) {
+  dialogueLines = [...lines];
   dialogueCallback = callback;
-  openModal('dialogue');
-  nextDialogue();
+  $("speaker").textContent = speaker;
+  open("dialogue");
+  advanceDialogue();
 }
-function nextDialogue() {
-  if (dialogueQueue.length) {
-    $('dialogue-text').textContent = dialogueQueue.shift();
-    $('dialogue-next').innerHTML = dialogueQueue.length
-      ? 'Go on… <span>→</span>'
-      : 'Understood. Probably. <span>→</span>';
-    sfx('talk');
+function advanceDialogue() {
+  if (dialogueLines.length) {
+    $("dialogue-text").textContent = dialogueLines.shift();
   } else {
-    closeModal();
+    close();
     const cb = dialogueCallback;
     dialogueCallback = null;
     cb?.();
   }
 }
-$('dialogue-next').onclick = nextDialogue;
-function updateHUD() {
-  const count = ENCOUNTERS.filter(
-    (e) => e.chapter === state.chapter && state.stamps.includes(e.id),
-  ).length;
-  $('quest-title').textContent = state.completed
-    ? 'Ordinary Animal Master'
-    : count === 3
-      ? 'Report back to Gary'
-      : CHAPTERS[state.chapter].goal;
-  $('quest-copy').textContent = state.completed
-    ? 'A lifetime qualification. Printed on a napkin.'
-    : count === 3
-      ? state.chapter === 2
-        ? 'The grand final awaits. Bring your confidence.'
-        : 'Three stamps! Gary has more questionable plans.'
-      : `Chapter ${state.chapter + 1} of 3 · ${count}/3 stamps · Follow the gold markers.`;
-  document.querySelectorAll('#stamps>span').forEach((el, i) => {
-    el.classList.toggle('earned', i < count);
-    el.textContent = i < count ? '✦' : String(i + 1).padStart(2, '0');
-  });
-  document.querySelector('.location-label').innerHTML =
-    `<span class="dot"></span> ${CHAPTERS[state.chapter].name.toUpperCase()} <small>${CHAPTERS[state.chapter].subtitle.toUpperCase()}</small>`;
-  $('companion-name').textContent = STARTERS[state.starter]?.name || 'No colleague yet';
-  $('companion-description').textContent =
-    STARTERS[state.starter]?.perk || 'Talk to the man in the lab coat.';
-  $('companion-img').src = portrait(state.starter || 'hamster');
-  updateJournal();
-}
-function beginGame() {
-  playing = true;
-  document.body.classList.add('playing');
-  $('hud').hidden = false;
-  if (state.starter) {
-    buildWorld(state.chapter);
-    toast(
-      state.completed
-        ? 'Welcome back, Master. The animals still have no idea.'
-        : `Welcome back to ${CHAPTERS[state.chapter].name}.`,
-    );
-    return;
-  }
+$("next").onclick = advanceDialogue;
+function readLetter() {
   speak(
+    "A LETTER FROM HOME",
     [
-      'Ah! A ten-year-old. Finally, someone with the life experience this project needs. I’m Professor Gary. The “professor” part is more of a mindset.',
-      'Welcome to my laboratory. Please do not touch the lawn mower. It is also my car.',
-      'Your mission: become an Ordinary Animal Master. Your equipment: one animal, unlimited snack crumbs, and the confidence of someone who has never paid rent.',
-    ],
-    chooseStarter,
-  );
-}
-function chooseStarter() {
-  $('starter-cards').replaceChildren();
-  Object.entries(STARTERS).forEach(([id, pet], i) => {
-    const button = document.createElement('button');
-    button.className = 'starter-card';
-    button.dataset.starter = id;
-    button.innerHTML = `<span class="number">NO. 00${i + 1} / ${pet.kind.toUpperCase()}</span><img src="${portrait(id)}" alt="${pet.kind} modeled in Blender"/><h3>${pet.name}</h3><p>${pet.description}</p><div class="trait">${pet.trait}<span>↗</span></div>`;
-    button.onclick = () => {
-      state.starter = id;
-      save();
-      closeModal();
-      buildWorld(0);
-      sfx('win');
-      speak([
-        `${pet.name}! Excellent choice. ${pet.perk} Take this field guide. I made it while the kettle was boiling.`,
-        CHAPTERS[0].intro,
-      ]);
-    };
-    $('starter-cards').appendChild(button);
-  });
-  openModal('starter');
-}
-$('begin').onclick = beginGame;
-function interact() {
-  if (!playing || modal || !activeTarget) return;
-  if (activeTarget.id === 'gary') {
-    talkGary();
-    return;
-  }
-  if (state.stamps.includes(activeTarget.id)) {
-    toast(`${activeTarget.name} remembers you. This is friendship. No paperwork needed.`);
-    sfx('win');
-    return;
-  }
-  launchEncounter(activeTarget.id);
-}
-function talkGary() {
-  if (!state.starter) {
-    chooseStarter();
-    return;
-  }
-  const count = ENCOUNTERS.filter(
-    (e) => e.chapter === state.chapter && state.stamps.includes(e.id),
-  ).length;
-  if (state.completed) {
-    showEnding();
-    return;
-  }
-  if (count < 3) {
-    speak([
-      `${3 - count} more stamp${3 - count === 1 ? '' : 's'} to go. Look for the gold markers. A nervous animal needs reassurance, a hungry one wants a snack, and a restless one needs play.`,
-      'If it goes badly, take a breath and try again. Your confidence refills. My insurance does not.',
-    ]);
-    return;
-  }
-  if (state.chapter < 2) {
-    const next = state.chapter + 1;
-    speak(
-      [
-        `Three stamps! You are now qualified to go slightly farther away. I have informed absolutely nobody.`,
-        CHAPTERS[next].intro,
-      ],
-      () => {
-        state.chapter = next;
-        save();
-        buildWorld(next);
-        sfx('win');
-        toast(`Chapter ${next + 1} · ${CHAPTERS[next].name}`);
-      },
-    );
-  } else
-    speak(
-      [
-        'Nine stamps. Three regions. One incredibly flexible definition of education. There is only one challenge left.',
-        'Behold: Municipal Bond. My undefeated champion hamster. Undefeated because, until today, we have been using “champion” decoratively.',
-        'Five good approaches should do it. Watch the mood every turn. Municipal Bond takes friendship surprisingly seriously.',
-      ],
-      () => launchEncounter('champion'),
-    );
-}
-function launchEncounter(id) {
-  battle = startEncounter(id);
-  const e = ENCOUNTERS.find((e) => e.id === id);
-  $('battle-companion').src = portrait(state.starter);
-  $('battle-wild').src = portrait(e.model);
-  $('encounter-name').textContent = e.name;
-  $('encounter-story').textContent = e.story;
-  $('battle-log').textContent = 'Watch their mood. A little understanding goes a long way.';
-  $('moves').hidden = false;
-  $('encounter-done').hidden = true;
-  renderBattle();
-  openModal('encounter');
-  sfx('meet');
-}
-function renderBattle() {
-  const e = ENCOUNTERS.find((e) => e.id === battle.id);
-  $('encounter-mood').textContent =
-    battle.outcome === 'won'
-      ? 'New friend!'
-      : battle.outcome === 'lost'
-        ? 'Needs a moment'
-        : `Feeling ${e.moods[battle.turn % e.moods.length]}`;
-  $('trust-value').textContent = `${battle.trust} / 100`;
-  $('confidence-value').textContent = `${battle.confidence} / 100`;
-  $('trust-meter').style.width = `${battle.trust}%`;
-  $('confidence-meter').style.width = `${battle.confidence}%`;
-}
-let turnBusy = false;
-for (const button of document.querySelectorAll('#moves button'))
-  button.onclick = () => {
-    if (turnBusy || !battle || battle.outcome) return;
-    turnBusy = true;
-    setTimeout(() => (turnBusy = false), 400);
-    battle = takeTurn(battle, button.dataset.move);
-    renderBattle();
-    const lines = {
-      reassure: 'You explain that nobody here has qualifications. Oddly reassuring.',
-      snack: 'A carefully negotiated crumb changes paws. Diplomacy works.',
-      play: `${STARTERS[state.starter].name} demonstrates a deeply unserious little dance.`,
-    };
-    $('battle-log').textContent = battle.match
-      ? lines[button.dataset.move]
-      : 'Not quite what they needed. Check the new mood and try a different approach.';
-    sfx(battle.match ? 'good' : 'miss');
-    if (battle.outcome) {
-      $('moves').hidden = true;
-      $('encounter-done').hidden = false;
-      if (battle.outcome === 'won') {
-        if (!state.stamps.includes(battle.id)) state.stamps.push(battle.id);
-        if (battle.id === 'champion') state.completed = true;
-        save();
-        updateHUD();
-        const e = ENCOUNTERS.find((e) => e.id === battle.id);
-        $('battle-log').textContent =
-          `Friendship established. “${e.stamp}” stamp earned. ${battle.id === 'champion' ? 'Gary looks suspiciously emotional.' : 'Your field journal has been updated.'}`;
-        const marker = markers.find((m) => m.id === battle.id);
-        if (marker) {
-          marker.ring.material = mat(0x6b9360);
-          marker.flag.material.map.dispose();
-          dynamicWorld.remove(marker.flag);
-          marker.flag = label('✓  FRIEND', marker.x, 2.15, marker.z, 3.4);
-        }
-        sfx('win');
-      } else
-        $('battle-log').textContent =
-          'You need a breather. No animals were harmed, and Gary has learned nothing. Your confidence will refill when you try again.';
-    }
-  };
-$('leave-encounter').onclick = () => {
-  closeModal();
-  battle = null;
-  toast('A respectful retreat. You can try again whenever you like.');
-};
-$('encounter-done').onclick = () => {
-  const ending = battle?.id === 'champion' && battle.outcome === 'won';
-  closeModal();
-  battle = null;
-  if (ending) showEnding();
-};
-function showEnding() {
-  speak(
-    [
-      'You did it. You understood ten ordinary animals. You listened, shared, and only briefly panicked. That is genuinely quite good for a Tuesday.',
-      'By the power vested in me by an online lab-coat retailer, I declare you an ORDINARY ANIMAL MASTER.',
-      'Your prize is a certificate, a lifelong friend, and being home before dinner. Your parents have been calling for twenty minutes.',
+      "Happy tenth birthday. Gary says you are old enough to begin your animal journey. Your bag is packed. Please remember to look both ways.",
+      "He says the league counts as education. I could not find it on the school website, but he does own a white coat.",
+      "Come home if it gets too much. Your room will be here. — Mum",
     ],
     () => {
-      showCertificate();
-      sfx('win');
+      state.note = true;
+      save();
+      updateHUD();
     },
   );
 }
-function showCertificate() {
-  let el = $('certificate');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'certificate';
-    el.className = 'modal-backdrop';
-    el.hidden = true;
-    el.innerHTML = `<section class="certificate-panel"><span class="certificate-seal">✳</span><span class="eyebrow">DEPARTMENT OF UNNECESSARY ADVENTURES</span><h2>Ordinary Animal<br/><em>Master.</em></h2><p>This certifies that a ten-year-old and their very normal animal<br/>made the world a little friendlier.</p><div class="certificate-stamps">✦ ✦ ✦ &nbsp; ✦ ✦ ✦ &nbsp; ✦ ✦ ✦</div><span class="eyebrow">THREE REGIONS · TEN NEW FRIENDS · ZERO QUALIFICATIONS</span><p class="signature">Professor Gary <small>ACCREDITATION STILL PENDING</small></p><button class="primary" id="keep-exploring">Keep exploring <span>→</span></button><p class="credits">An original adventure by SamGCoder<br/>Models & animation made in Blender · Powered by Three.js<br/>Code and original assets released under the MIT license.</p></section>`;
-    document.body.appendChild(el);
-    $('keep-exploring').onclick = closeModal;
+function talkGary() {
+  if (!state.note) {
+    speak("GARY / LOCAL RESEARCHER", [
+      "Your mother left a letter. You should probably read it before accepting responsibility for a living creature.",
+    ]);
+    return;
   }
-  openModal('certificate');
+  if (!state.starter) {
+    speak(
+      "GARY / LOCAL RESEARCHER",
+      [
+        "Ten years old. No income, no licence, no impulse control. The league considers this the ideal demographic.",
+        "I study animals. Ordinary ones. The council stopped funding me, so now children collect the specimens. It is apparently called field experience.",
+        "Choose a cat, a dog, or a hamster. Then battle the district leaders, capture wild animals, and come back with eight badges. There are forms. You cannot legally sign them, but sign them anyway.",
+      ],
+      () => {
+        open("choose");
+      },
+    );
+    return;
+  }
+  if (state.badges.length === 8 && !state.completed) {
+    const names = [
+      "The Welfare Board",
+      "The Insurance Adjuster",
+      "The Education Department",
+      "Professor Gary",
+    ];
+    speak(
+      names[state.league].toUpperCase(),
+      [
+        state.league === 3
+          ? "You have defeated everyone who was supposed to protect you. I suppose that leaves me."
+          : "The county championship. We have reviewed the paperwork and found that nobody is technically responsible.",
+      ],
+      () =>
+        startBattle({
+          id: "league" + state.league,
+          name: names[state.league],
+          roster:
+            state.league === 3 ? ["cat", "dog", "hamster"] : ["fox", "raccoon"],
+          level: 20 + state.league,
+          kind: "league",
+        }),
+    );
+    return;
+  }
+  state.party = state.party.map(restore);
+  state.medkits = Math.max(state.medkits, 3);
+  state.carriers = Math.max(state.carriers, 5);
+  syncCompanion();
+  save();
+  updateHUD();
+  speak("GARY / LOCAL RESEARCHER", [
+    state.completed
+      ? "A Master. Incredible. Your mother has phoned six times."
+      : "I have treated your animals and replenished your supplies. It is the least I can do, according to my solicitor.",
+  ]);
 }
-function updateJournal() {
-  let journal = $('journal');
-  if (!journal) {
-    journal = document.createElement('div');
-    journal.id = 'journal';
-    journal.innerHTML =
-      '<h3>Friends along the way</h3><div class="journal-grid"></div><div class="travel"></div>';
-    $('guide').querySelector('.guide-controls').before(journal);
+for (const button of document.querySelectorAll("[data-starter]"))
+  button.onclick = () => {
+    state.starter = button.dataset.starter;
+    state.party = [makeAnimal(state.starter, 5)];
+    close();
+    syncCompanion();
+    save();
+    updateHUD();
+    speak("GARY / LOCAL RESEARCHER", [
+      "Your neighbour is waiting outside. He has also been entrusted with an animal. You should fight. That is how the league says children make friends.",
+    ]);
+  };
+function syncCompanion() {
+  if (companion) {
+    animalGroup.remove(companion.root);
+    actors.splice(actors.indexOf(companion), 1);
   }
-  journal.querySelector('.journal-grid').innerHTML = ENCOUNTERS.map(
-    (e) =>
-      `<div class="journal-entry ${state.stamps.includes(e.id) ? 'found' : ''}"><img src="${portrait(e.model)}" alt="${e.model}"/><span>${state.stamps.includes(e.id) ? e.name : '???'}<small>${state.stamps.includes(e.id) ? e.stamp : 'Not yet acquainted'}</small></span></div>`,
-  ).join('');
-  const travel = journal.querySelector('.travel');
-  travel.replaceChildren();
-  if (!playing || !state.starter) return;
-  CHAPTERS.forEach((c, i) => {
-    const unlocked =
-      i === 0 ||
-      ENCOUNTERS.filter((e) => e.chapter === i - 1).every((e) => state.stamps.includes(e.id));
-    if (!unlocked) return;
-    const b = document.createElement('button');
-    b.className = 'text-button';
-    b.textContent = `${i === state.chapter ? '●' : '↗'} ${c.name}`;
-    b.onclick = () => {
-      state.chapter = i;
-      save();
-      closeModal();
-      buildWorld(i);
-    };
-    travel.appendChild(b);
+  const p = state.party.find((a) => a.hp > 0) || state.party[0];
+  companion = p
+    ? actor(p.species, position.x + 1, position.z + 1, p.level)
+    : null;
+}
+function rest() {
+  state.party = state.party.map(restore);
+  syncCompanion();
+  save();
+  updateHUD();
+  toast("Your animals are rested. The room is still yours.");
+}
+function enterGym(i) {
+  if (!state.starter) {
+    toast("You need an animal. Gary is at the clinic.");
+    return;
+  }
+  if (!state.wins.includes("rival")) {
+    toast("Your rival is waiting outside Gary’s clinic.");
+    return;
+  }
+  if (i > 0 && !state.badges.includes(i - 1)) {
+    toast(
+      `A ${DISTRICTS[i - 1].badge} Badge is required. Even this league has a queue.`,
+    );
+    return;
+  }
+  if (state.badges.includes(i)) {
+    toast("You already earned this badge. Your animals have been healed.");
+    state.party = state.party.map(restore);
+    save();
+    updateHUD();
+    return;
+  }
+  const d = DISTRICTS[i];
+  speak(d.leader.toUpperCase(), [d.quote], () =>
+    startBattle({
+      id: "gym" + i,
+      name: d.leader,
+      kind: "gym",
+      gym: i,
+      roster: d.roster,
+      level: 5 + i * 2,
+    }),
+  );
+}
+function selectActive() {
+  return state.party.findIndex((a) => a.hp > 0);
+}
+function startBattle(config) {
+  if (!state.party.length) {
+    toast("You need to choose your first animal.");
+    return;
+  }
+  const active = selectActive();
+  if (active < 0) {
+    blackout();
+    return;
+  }
+  close();
+  document.exitPointerLock?.();
+  keys.clear();
+  battle = {
+    config,
+    active,
+    enemyIndex: 0,
+    enemy: makeAnimal(config.roster[0], config.level),
+    busy: false,
+    turn: 1,
+    finished: false,
+  };
+  // Keep the battle at the child's eye height. Choose clear ground in front or to either side.
+  let forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  for (const angle of [
+    yaw,
+    yaw + Math.PI / 2,
+    yaw - Math.PI / 2,
+    yaw + Math.PI,
+  ]) {
+    const candidate = new THREE.Vector3(-Math.sin(angle), 0, -Math.cos(angle));
+    const right = new THREE.Vector3(-candidate.z, 0, candidate.x);
+    if (
+      [1, 2, 3, 4, 5].every((d) =>
+        [-1, 0, 1].every((w) => {
+          const x = position.x + candidate.x * d + right.x * w,
+            z = position.z + candidate.z * d + right.z * w;
+          return (
+            !collision(x, z) &&
+            !actors.some(
+              (a) =>
+                a.person &&
+                Math.hypot(a.root.position.x - x, a.root.position.z - z) < 0.85,
+            ) &&
+            !worldInfo.lights.some((l) => Math.hypot(l.x - x, l.z - z) < 0.5)
+          );
+        }),
+      )
+    ) {
+      forward = candidate;
+      break;
+    }
+  }
+  const right = new THREE.Vector3(-forward.z, 0, forward.x);
+  const anchor = position.clone().addScaledVector(forward, 3.1);
+  battle.anchor = anchor;
+  battle.cameraPosition = position.clone();
+  battle.leftPosition = position
+    .clone()
+    .addScaledVector(forward, 2.0)
+    .addScaledVector(right, -0.65);
+  battle.rightPosition = position
+    .clone()
+    .addScaledVector(forward, 4.1)
+    .addScaledVector(right, 0.45);
+  battle.left = actor(
+    state.party[active].species,
+    battle.leftPosition.x,
+    battle.leftPosition.z,
+  );
+  battle.right = actor(
+    battle.enemy.species,
+    battle.rightPosition.x,
+    battle.rightPosition.z,
+  );
+  faceBattleAnimals();
+  battle.left.root.position.y = floor(anchor.x, anchor.z);
+  battle.right.root.position.y = battle.left.root.position.y;
+  if (companion) companion.root.visible = false;
+  $("hud").hidden = true;
+  $("battle").hidden = false;
+  $("battle-continue").hidden = true;
+  $("move-buttons").hidden = false;
+  $("battle-actions").hidden = false;
+  $("battle-kind").textContent =
+    config.kind === "wild"
+      ? "WILD ANIMAL"
+      : config.kind === "gym"
+        ? `DISTRICT LEADER / ${config.name.toUpperCase()}`
+        : config.name.toUpperCase();
+  $("battle-log").textContent =
+    config.kind === "wild"
+      ? `A wild ${battle.enemy.nickname} blocks your path.`
+      : `${config.name} sends out ${battle.enemy.nickname}.`;
+  renderBattle();
+  sound("encounter");
+}
+function faceBattleAnimals() {
+  battle.left.root.lookAt(
+    battle.right.root.position.x,
+    battle.left.root.position.y,
+    battle.right.root.position.z,
+  );
+  battle.right.root.lookAt(
+    battle.left.root.position.x,
+    battle.right.root.position.y,
+    battle.left.root.position.z,
+  );
+}
+function renderBattle() {
+  if (!battle) return;
+  const p = state.party[battle.active],
+    e = battle.enemy;
+  $("enemy-name").textContent = e.nickname;
+  $("enemy-level").textContent =
+    `LV ${e.level} / ${SPECIES[e.species].type.toUpperCase()}`;
+  $("enemy-hp").style.width = `${(100 * e.hp) / e.maxHp}%`;
+  $("enemy-status").textContent =
+    `${e.hp}/${e.maxHp} HP${e.status ? " · " + e.status.toUpperCase() : ""}`;
+  $("ally-name").textContent = p.nickname;
+  $("ally-level").textContent =
+    `LV ${p.level} / ${SPECIES[p.species].type.toUpperCase()}`;
+  $("ally-hp").style.width = `${(100 * p.hp) / p.maxHp}%`;
+  $("ally-status").textContent =
+    `${p.hp}/${p.maxHp} HP${p.status ? " · " + p.status.toUpperCase() : ""}`;
+  $("battle-round").textContent = `TURN ${battle.turn}`;
+  $("carrier-count").textContent = state.carriers;
+  $("medkit-count").textContent = state.medkits;
+  $("move-buttons").replaceChildren();
+  for (const id of SPECIES[p.species].moves) {
+    const m = MOVES[id],
+      button = document.createElement("button");
+    button.innerHTML = `<b>${m.name}</b><small>${m.type.toUpperCase()} · ${m.power ? `POWER ${m.power}` : m.effect.toUpperCase()}</small>`;
+    button.title = m.desc;
+    button.disabled = battle.busy || battle.finished;
+    button.onclick = () => turn(id);
+    $("move-buttons").appendChild(button);
+  }
+  for (const id of ["capture-btn", "heal-btn", "switch-btn", "run-btn"])
+    $(id).disabled = battle.busy || battle.finished;
+  $("capture-btn").disabled ||=
+    battle.config.kind !== "wild" ||
+    state.carriers < 1 ||
+    state.party.length >= 6;
+  $("heal-btn").disabled ||= state.medkits < 1;
+}
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+async function perform(isPlayer, move) {
+  if (!battle) return;
+  const p = state.party[battle.active],
+    e = battle.enemy;
+  const result = attack(isPlayer ? p : e, isPlayer ? e : p, move);
+  if (isPlayer) {
+    state.party[battle.active] = result.a;
+    battle.enemy = result.d;
+  } else {
+    battle.enemy = result.a;
+    state.party[battle.active] = result.d;
+  }
+  const source = isPlayer ? battle.left : battle.right,
+    target = isPlayer ? battle.right : battle.left;
+  play(source, "Attack", true);
+  $("battle-log").textContent = result.message;
+  sound(result.amount ? "hit" : "status");
+  await delay(350);
+  if (result.amount) play(target, "Hit", true);
+  renderBattle();
+  await delay(550);
+  play(source, "Idle");
+  if ((isPlayer ? battle.enemy : state.party[battle.active]).hp > 0)
+    play(target, "Idle");
+}
+function enemyMove() {
+  const moves = SPECIES[battle.enemy.species].moves;
+  const attacks = moves.filter((m) => MOVES[m].power);
+  if (
+    battle.enemy.hp < battle.enemy.maxHp * 0.25 &&
+    moves.includes("hoard") &&
+    Math.random() < 0.3
+  )
+    return "hoard";
+  return attacks[Math.floor(Math.random() * attacks.length)];
+}
+async function turn(move) {
+  if (!battle || battle.busy || battle.finished) return;
+  battle.busy = true;
+  renderBattle();
+  const p = state.party[battle.active],
+    e = battle.enemy;
+  const playerFirst =
+    SPECIES[p.species].speed + p.level >= SPECIES[e.species].speed + e.level;
+  if (playerFirst) {
+    await perform(true, move);
+    if (battle.enemy.hp > 0) await perform(false, enemyMove());
+  } else {
+    await perform(false, enemyMove());
+    if (state.party[battle.active].hp > 0) await perform(true, move);
+  }
+  await resolveRound();
+}
+async function resolveRound() {
+  if (!battle) return;
+  if (battle.enemy.hp <= 0) {
+    play(battle.right, "Faint", true);
+    await delay(650);
+    battle.enemyIndex++;
+    if (battle.enemyIndex < battle.config.roster.length) {
+      removeActor(battle.right);
+      battle.enemy = makeAnimal(
+        battle.config.roster[battle.enemyIndex],
+        battle.config.level,
+      );
+      battle.right = actor(
+        battle.enemy.species,
+        battle.rightPosition.x,
+        battle.rightPosition.z,
+      );
+      battle.right.root.position.y = floor(battle.anchor.x, battle.anchor.z);
+      faceBattleAnimals();
+      $("battle-log").textContent =
+        `${battle.config.name} sends out ${battle.enemy.nickname}.`;
+    } else {
+      winBattle();
+      return;
+    }
+  }
+  if (state.party[battle.active].hp <= 0) {
+    play(battle.left, "Faint", true);
+    await delay(650);
+    const next = selectActive();
+    if (next < 0) {
+      battle.finished = true;
+      $("battle-log").textContent =
+        "Your entire party has fainted. Someone finally calls your mother.";
+      $("move-buttons").hidden = true;
+      $("battle-actions").hidden = true;
+      $("battle-continue").hidden = false;
+      $("battle-continue").onclick = () => {
+        endBattle();
+        blackout();
+      };
+      return;
+    }
+    swapAnimal(next);
+    $("battle-log").textContent = `${state.party[next].nickname} takes over.`;
+  }
+  battle.busy = false;
+  battle.turn++;
+  save();
+  renderBattle();
+}
+function winBattle(captured = false) {
+  const c = battle.config;
+  if (captured) {
+    state.party.push(restore(battle.enemy));
+    $("battle-log").textContent =
+      `Captured ${battle.enemy.nickname}. It is now legally your problem.`;
+  } else {
+    state.money += c.kind === "wild" ? 25 : 120;
+    state.party = state.party.map((p) => {
+      const old = p.maxHp;
+      p.level = Math.min(50, p.level + (c.kind === "wild" ? 1 : 2));
+      p.maxHp = SPECIES[p.species].hp + p.level * 4;
+      p.hp = p.hp > 0 ? Math.min(p.maxHp, p.hp + p.maxHp - old) : 0;
+      p.status = null;
+      p.attackStage = 0;
+      return p;
+    });
+    if (c.kind === "gym") {
+      state.badges.push(c.gym);
+      state.party = state.party.map(restore);
+      state.carriers += 3;
+      state.medkits += 2;
+      $("battle-log").textContent =
+        `${DISTRICTS[c.gym].badge} Badge earned. Your animals gained two levels. The league permits you to continue.`;
+    } else if (c.kind === "league") {
+      state.league++;
+      state.party = state.party.map(restore);
+      state.completed = state.league === 4;
+      $("battle-log").textContent = state.completed
+        ? "County champion. Nobody questions the ethics of this."
+        : "League round cleared. Your animals have been treated. Speak to Gary to continue.";
+    } else
+      $("battle-log").textContent =
+        "Victory. Your animals gained experience. The adults remain untroubled.";
+  }
+  if (!state.wins.includes(c.id)) state.wins.push(c.id);
+  battle.finished = true;
+  battle.busy = false;
+  $("move-buttons").hidden = true;
+  $("battle-actions").hidden = true;
+  $("battle-continue").hidden = false;
+  $("battle-continue").onclick = () => {
+    const ending = state.completed && c.kind === "league";
+    endBattle();
+    if (ending) open("ending");
+  };
+  save();
+  sound("win");
+  renderBattle();
+}
+function removeActor(a) {
+  animalGroup.remove(a.root);
+  a.mixer.stopAllAction();
+  const i = actors.indexOf(a);
+  if (i >= 0) actors.splice(i, 1);
+}
+function endBattle() {
+  if (!battle) return;
+  removeActor(battle.left);
+  removeActor(battle.right);
+  battle = null;
+  $("battle").hidden = true;
+  $("hud").hidden = false;
+  syncCompanion();
+  updateHUD();
+  save();
+}
+function blackout() {
+  state.party = state.party.map(restore);
+  state.money = Math.max(0, state.money - 30);
+  position.set(0, 1.35, 1.8);
+  yaw = 0.34;
+  pitch = -0.045;
+  syncCompanion();
+  save();
+  updateHUD();
+  toast(
+    "You wake at home. Your animals are treated. Try a different move or train on wild animals.",
+  );
+}
+function swapAnimal(index) {
+  if (!battle || state.party[index].hp <= 0) return;
+  battle.active = index;
+  removeActor(battle.left);
+  battle.left = actor(
+    state.party[index].species,
+    battle.leftPosition.x,
+    battle.leftPosition.z,
+  );
+  battle.left.root.rotation.y = Math.PI;
+  battle.left.root.position.y = floor(battle.anchor.x, battle.anchor.z);
+  faceBattleAnimals();
+  renderBattle();
+}
+$("capture-btn").onclick = async () => {
+  if (
+    !battle ||
+    battle.busy ||
+    battle.config.kind !== "wild" ||
+    !state.carriers ||
+    state.party.length >= 6
+  )
+    return;
+  battle.busy = true;
+  state.carriers--;
+  renderBattle();
+  $("battle-log").textContent =
+    "You throw a pet carrier. Somehow, this is a recognised technique.";
+  carrier.visible = true;
+  carrier.position
+    .copy(battle.left.root.position)
+    .add(new THREE.Vector3(0, 0.5, 0));
+  await delay(900);
+  carrier.visible = false;
+  if (Math.random() < captureChance(battle.enemy)) {
+    play(battle.right, "Faint", true);
+    winBattle(true);
+  } else {
+    $("battle-log").textContent =
+      "It breaks free. Weaken it further before trying again.";
+    await delay(700);
+    await perform(false, enemyMove());
+    await resolveRound();
+  }
+};
+$("heal-btn").onclick = async () => {
+  if (!battle || battle.busy || !state.medkits) return;
+  battle.busy = true;
+  state.medkits--;
+  const p = state.party[battle.active];
+  p.hp = Math.min(p.maxHp, p.hp + Math.ceil(p.maxHp * 0.6));
+  $("battle-log").textContent =
+    `Treated ${p.nickname}. The opponent does not pause for paperwork.`;
+  renderBattle();
+  await delay(750);
+  await perform(false, enemyMove());
+  await resolveRound();
+};
+$("run-btn").onclick = () => {
+  if (!battle || battle.busy) return;
+  if (battle.config.kind !== "wild") {
+    toast("Trainer and league battles must be finished.");
+    return;
+  }
+  endBattle();
+  toast("You retreat. Sensible.");
+};
+$("switch-btn").onclick = () => {
+  if (!battle || battle.busy) return;
+  partySelection = true;
+  showJournal("party");
+};
+
+function buildInteractions() {
+  addTarget(
+    "front-door",
+    0,
+    7.9,
+    "Front door",
+    () => {
+      frontOpen = !frontOpen;
+      toast(frontOpen ? "Front door opened." : "Front door closed.");
+    },
+    2,
+    1.2,
+  );
+  addTarget("letter", -1.35, -2.6, "Letter from Mum", readLetter, 2, 1);
+  addTarget(
+    "door",
+    0,
+    3.9,
+    "Bedroom door",
+    () => {
+      doorOpen = !doorOpen;
+      toast(doorOpen ? "Door opened." : "Door closed.");
+    },
+    2,
+    1.2,
+  );
+  addTarget("bed", 2, 0.6, "Rest your animals", rest, 2, 0.7);
+  addTarget("gary", 24, -15, "Gary, apparently a professor", talkGary, 3, 1.5);
+  const gary = person("gary", 24, -15);
+  gary.rotation.y = 0;
+  person("rival", 13, -9);
+  addTarget(
+    "rival",
+    13,
+    -9,
+    "Your neighbour",
+    () => {
+      if (!state.starter) {
+        toast("Gary is waiting at the clinic.");
+        return;
+      }
+      if (state.wins.includes("rival")) {
+        speak("YOUR NEIGHBOUR", [
+          "My dad says this builds character. He has not left the house all week.",
+        ]);
+        return;
+      }
+      speak(
+        "YOUR NEIGHBOUR",
+        [
+          "Gary gave you an animal too? Good. We should battle. That is what everyone keeps telling us.",
+        ],
+        () =>
+          startBattle({
+            id: "rival",
+            name: "Your neighbour",
+            kind: "rival",
+            roster: [
+              state.starter === "dog"
+                ? "cat"
+                : state.starter === "cat"
+                  ? "hamster"
+                  : "dog",
+            ],
+            level: 4,
+          }),
+      );
+    },
+    3,
+    1.3,
+  );
+  for (let i = 0; i < 8; i++) {
+    const t = worldInfo.towns[i];
+    person("gary", t.gymX, t.gymZ);
+    addTarget(
+      "gym" + i,
+      t.gymX,
+      t.gymZ,
+      DISTRICTS[i].leader,
+      () => enterGym(i),
+      3,
+      1.5,
+    );
+  }
+  // Fixed encounter sites plus patrol paths give the large map purposeful destinations.
+  const wilds = [
+    [-17, 19, "rat"],
+    [-34, 34, "cat"],
+    [-69, 59, "rabbit"],
+    [-108, 72, "dog"],
+    [-163, 51, "raccoon"],
+    [-220, 7, "rat"],
+    [-237, -81, "fox"],
+    [-222, -155, "rabbit"],
+    [-174, -219, "goat"],
+    [-102, -268, "fox"],
+    [19, -281, "raccoon"],
+    [95, -260, "dog"],
+    [185, -199, "fox"],
+    [242, -115, "goat"],
+    [258, 3, "rat"],
+    [239, 91, "raccoon"],
+    [167, 191, "rabbit"],
+    [99, 220, "cat"],
+    [22, 173, "dog"],
+    [8, 83, "hamster"],
+  ];
+  wilds.forEach(([x, z, species], i) => {
+    const a = actor(species, x, z, 3 + Math.floor(i / 2), true);
+    const target = addTarget(
+      "wild" + i,
+      x,
+      z,
+      `Wild ${SPECIES[species].name}`,
+      () => {
+        if (!state.starter) {
+          toast("Choose a starter before approaching wild animals.");
+          return;
+        }
+        startBattle({
+          id: "wild" + i,
+          name: `Wild ${SPECIES[species].name}`,
+          kind: "wild",
+          roster: [species],
+          level: Math.max(2, Math.min(20, 3 + Math.floor(i / 2))),
+        });
+      },
+      3,
+      0.5,
+    );
+    a.target = target;
+  });
+  // The three actual animated starter models stand outside Gary's clinic.
+  ["cat", "dog", "hamster"].forEach((s, i) => {
+    const a = actor(s, 21 + i * 1.5, -16);
+    a.stationary = true;
   });
 }
-$('guide-btn').onclick = () => {
-  if (modal && modal !== 'guide') return;
-  updateJournal();
-  openModal('guide');
+
+function showJournal(tab = "map") {
+  currentTab = tab;
+  open("journal");
+  renderJournal();
+}
+function renderJournal() {
+  for (const t of ["map", "party", "guide"])
+    $("tab-" + t).hidden = t !== currentTab;
+  document
+    .querySelectorAll("[data-tab]")
+    .forEach((b) =>
+      b.classList.toggle("selected", b.dataset.tab === currentTab),
+    );
+  if (currentTab === "map") drawMap();
+  if (currentTab === "party") {
+    $("tab-party").replaceChildren();
+    if (!state.party.length) {
+      $("tab-party").textContent =
+        "No animals. Gary has three starters at the clinic.";
+      return;
+    }
+    state.party.forEach((a, i) => {
+      const row = document.createElement("div");
+      row.className = "party-row";
+      row.innerHTML = `<div><h3>${a.nickname}</h3><p>LV ${a.level} · ${SPECIES[a.species].type.toUpperCase()} · ${a.hp}/${a.maxHp} HP</p></div>`;
+      const b = document.createElement("button");
+      b.textContent = partySelection ? "SEND OUT" : "MAKE LEAD";
+      b.disabled = a.hp <= 0 || (battle && i === battle.active);
+      b.onclick = async () => {
+        if (battle) {
+          close();
+          swapAnimal(i);
+          battle.busy = true;
+          renderBattle();
+          await delay(500);
+          await perform(false, enemyMove());
+          await resolveRound();
+        } else {
+          [state.party[0], state.party[i]] = [state.party[i], state.party[0]];
+          syncCompanion();
+          save();
+          renderJournal();
+          updateHUD();
+        }
+      };
+      row.appendChild(b);
+      $("tab-party").appendChild(row);
+    });
+    const supplies = document.createElement("p");
+    supplies.textContent = `£${state.money} · ${state.carriers} carriers · ${state.medkits} medkits. Treatment is free at home and at Gary’s clinic.`;
+    $("tab-party").appendChild(supplies);
+    for (const [kind, cost] of [
+      ["carriers", 20],
+      ["medkits", 30],
+    ]) {
+      const b = document.createElement("button");
+      b.textContent = `BUY ${kind === "carriers" ? "CARRIER" : "MEDKIT"} · £${cost}`;
+      b.disabled = Boolean(battle) || state.money < cost;
+      b.onclick = () => {
+        state.money -= cost;
+        state[kind]++;
+        save();
+        renderJournal();
+      };
+      $("tab-party").appendChild(b);
+    }
+  }
+}
+const mapCoordinates = (x, z) => ({ x: 450 + x * 0.95, y: 300 + z * 0.8 });
+function drawMap() {
+  const c = $("map").getContext("2d");
+  c.clearRect(0, 0, 900, 600);
+  c.fillStyle = "#142126";
+  c.fillRect(0, 0, 900, 600);
+  c.strokeStyle = "#a2b6a311";
+  c.lineWidth = 1;
+  for (let i = 0; i < 900; i += 45) {
+    c.beginPath();
+    c.moveTo(i, 0);
+    c.lineTo(i, 600);
+    c.stroke();
+  }
+  for (let i = 0; i < 600; i += 40) {
+    c.beginPath();
+    c.moveTo(0, i);
+    c.lineTo(900, i);
+    c.stroke();
+  }
+  c.strokeStyle = "#71826a";
+  c.lineWidth = 5;
+  c.beginPath();
+  const route = [[0, 20], ...worldInfo.towns.map((t) => [t.x, t.z]), [0, 20]];
+  route.forEach(([x, z], i) => {
+    const p = mapCoordinates(x, z);
+    i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y);
+  });
+  c.stroke();
+  c.font = "12px monospace";
+  worldInfo.towns.forEach((t, i) => {
+    const p = mapCoordinates(t.x, t.z);
+    c.fillStyle = state.badges.includes(i) ? "#ceb37c" : "#718481";
+    c.beginPath();
+    c.arc(p.x, p.y, 7, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "#c7d1c2";
+    c.fillText(`${i + 1}. ${DISTRICTS[i].name}`, p.x + 12, p.y - 8);
+  });
+  for (const [x, z, name] of [
+    [0, 0, "HOME"],
+    [24, -23, "CLINIC"],
+  ]) {
+    const p = mapCoordinates(x, z);
+    c.fillStyle = "#adba9a";
+    c.fillRect(p.x - 3, p.y - 3, 6, 6);
+    c.fillText(name, p.x + 10, p.y + 12);
+  }
+  const p = mapCoordinates(position.x, position.z);
+  c.fillStyle = "#ecceb0";
+  c.beginPath();
+  c.arc(p.x, p.y, 5, 0, Math.PI * 2);
+  c.fill();
+  c.strokeStyle = "#ecceb0";
+  c.beginPath();
+  c.moveTo(p.x, p.y);
+  c.lineTo(p.x - Math.sin(yaw) * 15, p.y - Math.cos(yaw) * 15);
+  c.stroke();
+  $("map-caption").textContent =
+    "WICKMERE COUNTY · 1.2 × 1.2 KM · Follow the ring road. Click an earned badge location to take the league bus. Home and clinic travel unlocks after the first badge.";
+  $("badge-list").innerHTML = DISTRICTS.map(
+    (d, i) =>
+      `<span class="${state.badges.includes(i) ? "won" : ""}">${i + 1}. ${d.badge}</span>`,
+  ).join("");
+}
+$("map").onclick = (e) => {
+  if (battle) return;
+  const r = $("map").getBoundingClientRect(),
+    x = ((e.clientX - r.left) * 900) / r.width,
+    y = ((e.clientY - r.top) * 600) / r.height;
+  for (let i = 0; i < 8; i++) {
+    const t = worldInfo.towns[i],
+      p = mapCoordinates(t.x, t.z);
+    if (Math.hypot(x - p.x, y - p.y) < 25 && state.badges.includes(i)) {
+      position.set(t.x, 1.35, t.z);
+      close();
+      syncCompanion();
+      save();
+      toast(`League bus: ${DISTRICTS[i].name}. Children travel unaccompanied.`);
+      return;
+    }
+  }
+  const p = mapCoordinates(0, 0);
+  if (Math.hypot(x - p.x, y - p.y) < 40 && state.badges.length) {
+    position.set(0, 1.35, 8);
+    close();
+    syncCompanion();
+    save();
+  }
 };
-$('close-guide').onclick = closeModal;
-$('reset-btn').onclick = () => ($('reset-message').hidden = false);
-$('confirm-reset').onclick = () => {
+for (const b of document.querySelectorAll("[data-tab]"))
+  b.onclick = () => {
+    currentTab = b.dataset.tab;
+    renderJournal();
+  };
+$("menu-btn").onclick = () => {
+  if (!modal && !battle) showJournal();
+};
+$("close-journal").onclick = close;
+$("motion").checked = cameraMotion;
+$("motion").checked = cameraMotion;
+$("motion").onchange = (e) => {
+  cameraMotion = e.target.checked;
+  settings.motion = cameraMotion;
+  rememberSettings();
+};
+$("sensitivity").value = lookSensitivity;
+$("sensitivity").oninput = (e) => {
+  lookSensitivity = Number(e.target.value);
+  settings.sensitivity = lookSensitivity;
+  rememberSettings();
+};
+function applyGraphics(quality) {
+  quality = ["high", "balanced", "performance"].includes(quality)
+    ? quality
+    : "high";
+  settings.quality = quality;
+  $("graphics").value = quality;
+  renderer.setPixelRatio(
+    Math.min(
+      devicePixelRatio,
+      quality === "high" ? 1.6 : quality === "balanced" ? 1.2 : 1,
+    ),
+  );
+  composer.setPixelRatio(renderer.getPixelRatio());
+  contactShadows.enabled = quality !== "performance";
+  bloom.enabled = quality !== "performance";
+  renderer.shadowMap.enabled = quality !== "performance";
+  rememberSettings();
+}
+$("graphics").onchange = (e) => applyGraphics(e.target.value);
+applyGraphics(settings.quality || (innerWidth < 760 ? "performance" : "high"));
+renderer.toneMappingExposure = Math.max(
+  0.8,
+  Math.min(2, Number(settings.brightness) || 1.35),
+);
+$("brightness").value = renderer.toneMappingExposure;
+$("brightness").oninput = (e) => {
+  renderer.toneMappingExposure = Number(e.target.value);
+  settings.brightness = renderer.toneMappingExposure;
+  rememberSettings();
+};
+$("reset").onclick = () => ($("reset-confirm").hidden = false);
+$("reset-yes").onclick = () => {
   try {
     localStorage.removeItem(SAVE_KEY);
   } catch {}
   location.reload();
 };
-$('home-btn').onclick = () => {
-  if (modal) return;
-  player.position.set(0, 0.12, 1);
-  if (companion) companion.position.set(1, 0.12, 1);
-  destination = new THREE.Vector3(-2, 0.12, -1);
-  toast('Returning to the nearest questionable adult.');
+$("ending-close").onclick = () => {
+  close();
+  position.set(0, 1.35, 1.8);
+  yaw = 0.34;
+  pitch = -0.045;
+  syncCompanion();
+  save();
+  updateHUD();
 };
-$('interact').onclick = interact;
 
-// Small synthesized soundtrack. Nothing downloads, and audio starts only on request.
-let audioContext,
-  soundOn = false,
-  musicInterval,
-  noteIndex = 0;
-function tone(freq, duration = 0.12, volume = 0.04, delay = 0) {
-  if (!soundOn || !audioContext) return;
-  const start = audioContext.currentTime + delay;
+function interact() {
+  if (modal || battle || !playing) return;
+  activeTarget?.fn();
+}
+$("interact-btn").onclick = interact;
+function requestLook() {
+  if (!playing || modal || battle) return;
+  const result = renderer.domElement.requestPointerLock?.();
+  result?.catch(() => {
+    $("look-hint").textContent = "DRAG TO LOOK · ARROW KEYS ALSO TURN";
+  });
+}
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  if (!playing || modal || battle) return;
+  if (e.pointerType === "touch") {
+    if (e.clientX > innerWidth * 0.4) lookDrag = true;
+  } else {
+    lookDrag = true;
+    requestLook();
+  }
+});
+window.addEventListener("pointerup", () => (lookDrag = false));
+window.addEventListener("pointercancel", () => (lookDrag = false));
+let previousTouch = null;
+window.addEventListener("pointermove", (e) => {
+  if (!playing || modal || battle) return;
+  if (document.pointerLockElement === renderer.domElement || lookDrag) {
+    let dx = e.movementX,
+      dy = e.movementY;
+    if (e.pointerType === "touch") {
+      dx = previousTouch ? e.clientX - previousTouch.x : 0;
+      dy = previousTouch ? e.clientY - previousTouch.y : 0;
+      previousTouch = { x: e.clientX, y: e.clientY };
+    }
+    yaw -= dx * lookSensitivity;
+    pitch = Math.max(-1.3, Math.min(1.3, pitch - dy * lookSensitivity));
+  }
+});
+window.addEventListener("pointerup", () => (previousTouch = null));
+document.addEventListener("pointerlockerror", () => {
+  $("look-hint").textContent = "DRAG TO LOOK · ARROW KEYS ALSO TURN";
+});
+window.addEventListener("keydown", (e) => {
+  if (modal) {
+    if (e.key === "Escape" && modal === "journal") close();
+    if (e.key === "Tab") {
+      const nodes = [
+        ...$(modal).querySelectorAll("button:not([disabled]),input,select"),
+      ].filter((n) => n.offsetParent !== null);
+      if (!e.shiftKey && document.activeElement === nodes.at(-1)) {
+        e.preventDefault();
+        nodes[0]?.focus();
+      } else if (e.shiftKey && document.activeElement === nodes[0]) {
+        e.preventDefault();
+        nodes.at(-1)?.focus();
+      }
+    }
+    return;
+  }
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key))
+    e.preventDefault();
+  keys.add(e.key.toLowerCase());
+  if (e.repeat) return;
+  if (e.key.toLowerCase() === "e") interact();
+  if (e.key.toLowerCase() === "f") {
+    flashlight.visible = !flashlight.visible;
+    if (torch) torch.visible = flashlight.visible;
+  }
+  if (e.key.toLowerCase() === "j" && !battle && playing) showJournal();
+  if (battle && ["1", "2", "3", "4"].includes(e.key))
+    turn(SPECIES[state.party[battle.active].species].moves[Number(e.key) - 1]);
+});
+window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+window.addEventListener("blur", () => {
+  keys.clear();
+  lookDrag = false;
+  save();
+});
+for (const b of document.querySelectorAll("#pad button")) {
+  b.onpointerdown = (e) => {
+    e.preventDefault();
+    b.setPointerCapture(e.pointerId);
+    keys.add(b.dataset.key);
+  };
+  b.onpointerup = b.onpointercancel = () => keys.delete(b.dataset.key);
+}
+
+function tone(f, duration = 0.1, volume = 0.05, delay = 0) {
+  if (!soundOn) return;
   const o = audioContext.createOscillator(),
-    g = audioContext.createGain();
-  o.type = 'sine';
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(0, start);
-  g.gain.linearRampToValueAtTime(volume, start + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    g = audioContext.createGain(),
+    t = audioContext.currentTime + delay;
+  o.type = "triangle";
+  o.frequency.value = f;
+  g.gain.setValueAtTime(volume, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
   o.connect(g);
   g.connect(audioContext.destination);
-  o.start(start);
-  o.stop(start + duration + 0.01);
+  o.start(t);
+  o.stop(t + duration + 0.01);
 }
-function sfx(kind) {
-  if (kind === 'win') {
-    [523, 659, 784, 1047].forEach((n, i) => tone(n, 0.3, 0.035, i * 0.1));
-  } else if (kind === 'good') tone(659, 0.19);
-  else if (kind === 'miss') tone(220, 0.15, 0.025);
-  else if (kind === 'meet') {
-    tone(392, 0.15);
-    tone(523, 0.23, 0.03, 0.15);
-  } else tone(420, 0.045, 0.012);
+function sound(kind) {
+  if (kind === "win")
+    [196, 246.94, 293.66, 392].forEach((f, i) => tone(f, 0.4, 0.025, i * 0.12));
+  else if (kind === "hit") {
+    tone(70, 0.17, 0.07);
+    tone(43, 0.12, 0.04, 0.03);
+  } else if (kind === "encounter") {
+    tone(110, 0.35, 0.025);
+    tone(116, 0.35, 0.02, 0.08);
+  } else tone(300, 0.12, 0.025);
 }
-$('sound-btn').onclick = async () => {
+$("audio-btn").onclick = async () => {
   soundOn = !soundOn;
   if (soundOn) {
     audioContext ||= new AudioContext();
     await audioContext.resume();
-    musicInterval = setInterval(() => {
-      const notes = [
-        261.63, 329.63, 392, 329.63, 293.66, 349.23, 440, 349.23, 261.63, 329.63, 392, 523.25,
-        293.66, 349.23, 392, 329.63,
-      ];
-      tone(notes[noteIndex++ % notes.length], 0.8, 0.018);
-    }, 480);
-    sfx('win');
-  } else clearInterval(musicInterval);
-  $('sound-btn').setAttribute('aria-label', soundOn ? 'Mute sound' : 'Enable sound');
-  $('sound-btn').title = soundOn ? 'Mute sound' : 'Enable sound';
-  document.querySelector('.sound-slash').hidden = soundOn;
+    if (!noiseSource) {
+      const buffer = audioContext.createBuffer(
+          1,
+          audioContext.sampleRate * 3,
+          audioContext.sampleRate,
+        ),
+        data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++)
+        data[i] = (Math.random() * 2 - 1) * 0.3;
+      noiseSource = audioContext.createBufferSource();
+      noiseSource.buffer = buffer;
+      noiseSource.loop = true;
+      const filter = audioContext.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 850;
+      noiseGain = audioContext.createGain();
+      noiseGain.gain.value = 0.07;
+      noiseSource.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(audioContext.destination);
+      noiseSource.start();
+    }
+    noiseGain.gain.value = 0.07;
+  } else if (noiseGain) noiseGain.gain.value = 0;
+  $("audio-btn").textContent = soundOn ? "SOUND ON" : "SOUND OFF";
 };
-document.addEventListener('visibilitychange', () => {
+document.addEventListener("visibilitychange", () => {
+  keys.clear();
   if (audioContext) {
     if (document.hidden) audioContext.suspend();
     else if (soundOn) audioContext.resume();
   }
-  keys.clear();
+  if (playing) save();
 });
-function blocked(x, z) {
-  if ((x / 16.3) ** 2 + (z / 12.8) ** 2 > 1) return true;
-  return collisions.some((c) => {
-    if (c.bridge && Math.abs(x - 7) < 0.8) return false;
-    return Math.abs(x - c.x) < c.w / 2 + 0.22 && Math.abs(z - c.z) < c.d / 2 + 0.22;
-  });
-}
-function movePlayer(dx, dz) {
-  const p = player.position;
-  const oldx = p.x,
-    oldz = p.z;
-  if (!blocked(p.x + dx, p.z)) p.x += dx;
-  if (!blocked(p.x, p.z + dz)) p.z += dz;
-  moving = Math.hypot(p.x - oldx, p.z - oldz) > 0.0001;
-  if (moving) {
-    const angle = Math.atan2(dx, dz);
-    player.rotation.y +=
-      Math.atan2(Math.sin(angle - player.rotation.y), Math.cos(angle - player.rotation.y)) * 0.2;
-  }
-}
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab' && modal) {
-    const list = [
-      ...$(modal).querySelectorAll('button:not([hidden]):not([disabled]),a[href]'),
-    ].filter((el) => el.offsetParent !== null);
-    const first = list[0],
-      last = list.at(-1);
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last?.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first?.focus();
-    }
-    return;
-  }
-  if (e.key === 'Escape') {
-    if (['guide', 'encounter', 'certificate'].includes(modal)) {
-      if (modal === 'encounter' && battle?.id === 'champion' && battle?.outcome === 'won') {
-        closeModal();
-        showEnding();
-      } else closeModal();
-    }
-    return;
-  }
-  if (modal) {
-    if (
-      (e.key === 'e' || e.key === 'Enter') &&
-      modal === 'dialogue' &&
-      e.target.tagName !== 'BUTTON'
-    )
-      nextDialogue();
-    return;
-  }
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
-  keys.add(e.key.toLowerCase());
-  if (e.key.toLowerCase() === 'e' && !e.repeat) interact();
-});
-window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => keys.clear());
-const moveMap = { up: 'w', left: 'a', down: 's', right: 'd' };
-for (const b of document.querySelectorAll('#touch-controls button')) {
-  b.onpointerdown = (e) => {
-    e.preventDefault();
-    b.setPointerCapture(e.pointerId);
-    keys.add(moveMap[b.dataset.move]);
-  };
-  b.onpointerup = b.onpointercancel = () => keys.delete(moveMap[b.dataset.move]);
-}
-const raycaster = new THREE.Raycaster(),
-  pointer = new THREE.Vector2(),
-  groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.12);
-renderer.domElement.addEventListener('pointerdown', (e) => {
-  if (!playing || modal || !state.starter) return;
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.set(
-    ((e.clientX - rect.left) / rect.width) * 2 - 1,
-    (-(e.clientY - rect.top) / rect.height) * 2 + 1,
-  );
-  raycaster.setFromCamera(pointer, camera);
-  const target = new THREE.Vector3();
-  if (raycaster.ray.intersectPlane(groundPlane, target) && !blocked(target.x, target.z)) {
-    route = findPath(player.position, target, blocked);
-    const p = route.shift();
-    destination = p ? new THREE.Vector3(p.x, 0.12, p.z) : null;
-    if (!destination) toast('No clear route. Try a nearby patch of ground.');
-  }
-});
-function resize() {
-  const { width, height } = $('world').getBoundingClientRect();
-  renderer.setSize(width, height, false);
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-}
-new ResizeObserver(resize).observe($('world'));
-let last = performance.now();
-function animate(now) {
-  requestAnimationFrame(animate);
-  const dt = Math.min((now - last) / 1000, 0.04);
-  last = now;
-  renderTime += dt;
-  if (!world) return;
-  for (const m of mixers) m.update(reducedMotion ? 0 : dt);
-  moving = false;
-  if (playing && state.starter && !modal) {
-    let sx =
-        (keys.has('d') || keys.has('arrowright') ? 1 : 0) -
-        (keys.has('a') || keys.has('arrowleft') ? 1 : 0),
-      sz =
-        (keys.has('s') || keys.has('arrowdown') ? 1 : 0) -
-        (keys.has('w') || keys.has('arrowup') ? 1 : 0);
-    let dx = 0,
-      dz = 0;
-    if (sx || sz) {
-      destination = null;
-      route = [];
-      dx = sx * 0.8 + sz * 0.6;
-      dz = -sx * 0.6 + sz * 0.8;
-      const len = Math.hypot(dx, dz);
-      dx /= len;
-      dz /= len;
-    } else if (destination) {
-      dx = destination.x - player.position.x;
-      dz = destination.z - player.position.z;
-      const len = Math.hypot(dx, dz);
-      if (len < 0.15) {
-        const p = route.shift();
-        destination = p ? new THREE.Vector3(p.x, 0.12, p.z) : null;
-        dx = dz = 0;
-      } else {
-        dx /= len;
-        dz /= len;
-      }
-    }
-    if (dx || dz) {
-      movePlayer(dx * dt * 4.3, dz * dt * 4.3);
-      if (!moving) destination = null;
-    }
-    player.position.y =
-      0.12 + (moving && !reducedMotion ? Math.abs(Math.sin(renderTime * 13)) * 0.09 : 0);
-    if (companion) {
-      const diff = player.position.clone().sub(companion.position);
-      diff.y = 0;
-      const distance = diff.length();
-      if (distance > 1.15) {
-        companion.position.addScaledVector(diff, Math.min(1, dt * 4));
-        companion.rotation.y = Math.atan2(diff.x, diff.z);
-      }
-      companion.position.y =
-        0.12 + (moving && !reducedMotion ? Math.abs(Math.sin(renderTime * 16)) * 0.07 : 0);
-    }
-    footstepTimer += dt;
-    if (moving && footstepTimer > 0.32) {
-      footstepTimer = 0;
-      tone(95 + Math.random() * 25, 0.035, 0.008);
-    }
-    activeTarget = markers.reduce((best, m) => {
-      const d = Math.hypot(player.position.x - m.x, player.position.z - m.z);
-      return d < 2.35 && (!best || d < best.distance) ? { ...m, distance: d } : best;
-    }, null);
-    $('interact').hidden = !activeTarget;
-    $('interact').textContent = activeTarget ? `E  ·  ${activeTarget.label}` : '';
-  } else $('interact').hidden = true;
-  for (const m of markers) {
-    if (m.ring && !reducedMotion) {
-      const s = 1 + Math.sin(renderTime * 2.5) * 0.045;
-      m.ring.scale.set(s, s, s);
-    }
-    if (m.flag) m.flag.position.y = 2.15 + (reducedMotion ? 0 : Math.sin(renderTime * 1.7) * 0.06);
-  }
-  const follow = innerWidth < 800 ? 1 : 0.28;
-  const desired = playing
-    ? new THREE.Vector3(player.position.x * follow, 0, player.position.z * follow)
-    : new THREE.Vector3(0, 0.3, 0.2);
-  cameraTarget.lerp(desired, 1 - Math.exp(-dt * 3));
-  const zoom = playing ? (innerWidth < 800 ? 1.08 : 0.79) : innerWidth < 800 ? 1.42 : 1.05;
-  const wanted = cameraTarget.clone().addScaledVector(introPosition, zoom);
-  camera.position.lerp(wanted, 1 - Math.exp(-dt * 2));
-  camera.lookAt(cameraTarget);
-  renderer.render(scene, camera);
-}
-requestAnimationFrame(animate);
 
+// Rain reuses the Blender-authored raindrop mesh through instancing.
+let rainMesh,
+  rainData = [];
+const dummy = new THREE.Object3D();
+function buildRain() {
+  let source;
+  assets.rain.scene.traverse((o) => {
+    if (o.isMesh && !source) source = o;
+  });
+  rainMesh = new THREE.InstancedMesh(source.geometry, source.material, 650);
+  rainMesh.frustumCulled = false;
+  scene.add(rainMesh);
+  for (let i = 0; i < 650; i++)
+    rainData.push({
+      x: Math.random() * 80 - 40,
+      z: Math.random() * 80 - 40,
+      y: Math.random() * 25,
+    });
+}
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min((now - last) / 1000, 0.045);
+  last = now;
+  time += dt;
+  if (!worldInfo) return;
+  for (const a of actors) {
+    a.mixer.update(dt);
+    if (a.stationary || (battle && (a === battle.left || a === battle.right)))
+      continue;
+    if (a === companion) {
+      a.root.visible = !battle;
+      if (battle) continue;
+      const diff = position.clone().sub(a.root.position);
+      diff.y = 0;
+      const dist = diff.length();
+      if (dist > 20) {
+        a.root.position.set(position.x + 1, 0, position.z + 1);
+      } else if (dist > 1.4 && playing && !modal) {
+        a.root.position.addScaledVector(diff, Math.min(1, dt * 2.8));
+        a.root.rotation.y = Math.atan2(diff.x, diff.z);
+        play(a, "Walk");
+      } else play(a, "Idle");
+      a.root.position.y = floor(a.root.position.x, a.root.position.z);
+    } else if (a.hostile) {
+      const distance = a.root.position.distanceTo(position);
+      a.root.visible = distance < 100;
+      if (distance > 100) continue;
+      const walking = Math.sin(time * 0.17 + a.phase) > 0.1;
+      if (walking && !battle) {
+        const x = a.home.x + Math.sin(time * 0.18 + a.phase) * 1.6,
+          z = a.home.z + Math.cos(time * 0.18 + a.phase) * 1.6;
+        a.root.rotation.y = Math.atan2(
+          x - a.root.position.x,
+          z - a.root.position.z,
+        );
+        a.root.position.set(x, floor(x, z), z);
+        play(a, "Walk");
+      } else play(a, "Idle");
+      if (a.target) {
+        a.target.x = a.root.position.x;
+        a.target.z = a.root.position.z;
+      }
+    }
+  }
+  doorAngle = THREE.MathUtils.damp(
+    doorAngle,
+    doorOpen ? -Math.PI * 0.48 : 0,
+    5,
+    dt,
+  );
+  if (door) door.rotation.y = doorAngle;
+  frontAngle = THREE.MathUtils.damp(
+    frontAngle,
+    frontOpen ? -Math.PI * 0.48 : 0,
+    5,
+    dt,
+  );
+  if (frontDoor) frontDoor.rotation.y = frontAngle;
+  let moving = false;
+  if (playing && !modal && !battle) {
+    if (keys.has("arrowleft")) yaw += dt * 1.4;
+    if (keys.has("arrowright")) yaw -= dt * 1.4;
+    if (keys.has("arrowup")) pitch = Math.min(1.3, pitch + dt);
+    if (keys.has("arrowdown")) pitch = Math.max(-1.3, pitch - dt);
+    let x = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0),
+      z = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0);
+    if (x || z) {
+      const l = Math.hypot(x, z);
+      x /= l;
+      z /= l;
+      const running = keys.has("shift") && stamina > 2,
+        speed = running ? 6.6 : 3.2;
+      const dx = (x * Math.cos(yaw) + z * Math.sin(yaw)) * speed * dt,
+        dz = (-x * Math.sin(yaw) + z * Math.cos(yaw)) * speed * dt;
+      if (!collision(position.x + dx, position.z)) position.x += dx;
+      if (!collision(position.x, position.z + dz)) position.z += dz;
+      moving = true;
+      if (running) stamina = Math.max(0, stamina - dt * 15);
+      else stamina = Math.min(100, stamina + dt * 8);
+    } else stamina = Math.min(100, stamina + dt * 15);
+    const ground = floor(position.x, position.z);
+    position.y = THREE.MathUtils.damp(position.y, ground + 1.35, 15, dt);
+    footTimer += dt;
+    if (moving && footTimer > 0.4) {
+      footTimer = 0;
+      tone(55 + Math.random() * 15, 0.07, 0.028);
+    }
+    const direction = new THREE.Vector3(
+      -Math.sin(yaw) * Math.cos(pitch),
+      Math.sin(pitch),
+      -Math.cos(yaw) * Math.cos(pitch),
+    );
+    activeTarget = null;
+    for (const t of targets) {
+      const v = new THREE.Vector3(
+          t.x - position.x,
+          t.y + floor(t.x, t.z) - position.y,
+          t.z - position.z,
+        ),
+        dist = v.length();
+      if (
+        dist < t.radius &&
+        v.normalize().dot(direction) > 0.45 &&
+        (!activeTarget || dist < activeTarget.distance)
+      )
+        activeTarget = { ...t, distance: dist };
+    }
+    $("interact").hidden = !activeTarget;
+    $("interact-label").textContent = activeTarget?.name || "";
+    saveTimer += dt;
+    if (saveTimer > 8) {
+      saveTimer = 0;
+      save();
+    }
+  } else $("interact").hidden = true;
+  if (battle) {
+    const h = floor(battle.anchor.x, battle.anchor.z);
+    camera.position.copy(battle.cameraPosition);
+    camera.lookAt(battle.anchor.x, h + 0.28, battle.anchor.z);
+    if (carrier.visible) {
+      carrier.position.lerp(
+        battle.right.root.position.clone().add(new THREE.Vector3(0, 0.35, 0)),
+        dt * 4,
+      );
+      carrier.rotation.x += dt * 7;
+    }
+  } else {
+    camera.position.copy(position);
+    if (cameraMotion && moving)
+      camera.position.y += Math.sin(time * 11) * 0.023;
+    camera.rotation.set(pitch, yaw, 0, "YXZ");
+    if (!playing) {
+      camera.position.set(0.15, 1.28, 1.9);
+      camera.rotation.set(-0.035, 0.34, 0, "YXZ");
+    }
+  }
+  const targetFov = battle ? 52 : 68;
+  if (Math.abs(camera.fov - targetFov) > 0.01) {
+    camera.fov = cameraMotion
+      ? THREE.MathUtils.damp(camera.fov, targetFov, 6, dt)
+      : targetFov;
+    camera.updateProjectionMatrix();
+  }
+  if (torch) {
+    torch.position
+      .copy(camera.position)
+      .add(
+        new THREE.Vector3(0.2, -0.2, -0.38).applyQuaternion(camera.quaternion),
+      );
+    torch.quaternion.copy(camera.quaternion);
+    torch.rotateX(Math.PI / 2);
+    torch.visible = flashlight.visible && !battle;
+  }
+  flashlight.position
+    .copy(camera.position)
+    .add(
+      new THREE.Vector3(0.15, -0.15, -0.08).applyQuaternion(camera.quaternion),
+    );
+  flashlight.target.position
+    .copy(camera.position)
+    .add(new THREE.Vector3(0, 0, -12).applyQuaternion(camera.quaternion));
+  moon.position.set(position.x + 20, 35, position.z - 25);
+  moon.target.position.set(position.x, 0, position.z);
+  const inside = Math.abs(position.x) < 4.2 && Math.abs(position.z) < 4.2;
+  ambient.intensity = THREE.MathUtils.damp(
+    ambient.intensity,
+    inside ? 0.6 : battle ? 1.15 : 0.95,
+    3,
+    dt,
+  );
+  battleLight.visible = Boolean(battle);
+  if (battle)
+    battleLight.position.set(battle.anchor.x - 1, 3, battle.anchor.z + 2);
+  const nearestLamps = [...worldInfo.lights]
+    .sort(
+      (a, b) =>
+        Math.hypot(a.x - position.x, a.z - position.z) -
+        Math.hypot(b.x - position.x, b.z - position.z),
+    )
+    .slice(0, 4);
+  streetLights.forEach((l, i) => {
+    const p = nearestLamps[i];
+    l.visible =
+      Boolean(p) && Math.hypot(p.x - position.x, p.z - position.z) < 45;
+    if (p) l.position.set(p.x, p.y, p.z);
+  });
+  if (rainMesh) {
+    for (let i = 0; i < rainData.length; i++) {
+      const r = rainData[i];
+      r.y -= dt * 12;
+      if (r.y < 0) r.y = 25;
+      const rx = position.x + r.x,
+        rz = position.z + r.z;
+      dummy.position.set(rx, r.y + floor(rx, rz), rz);
+      dummy.rotation.z = 0.1;
+      dummy.scale.setScalar(Math.abs(rx) < 4.3 && Math.abs(rz) < 4.3 ? 0 : 1);
+      dummy.updateMatrix();
+      rainMesh.setMatrixAt(i, dummy.matrix);
+    }
+    rainMesh.instanceMatrix.needsUpdate = true;
+  }
+  if (playing && !battle) {
+    $("location").textContent = inside ? "YOUR BEDROOM" : regionName();
+    const goal = setObjective(),
+      dist = Math.hypot(goal.x - position.x, goal.z - position.z);
+    $("waypoint").innerHTML =
+      `${Math.round(dist)} M<small>${goal.name}</small>`;
+    $("stamina").firstElementChild.style.width = stamina + "%";
+  }
+  modularWorld?.updateVisibility(position);
+  renderer.info.reset();
+  composer.render();
+}
+function regionName() {
+  let nearest = -1,
+    distance = Infinity;
+  worldInfo.towns.forEach((t, i) => {
+    const d = Math.hypot(t.x - position.x, t.z - position.z);
+    if (d < distance) {
+      distance = d;
+      nearest = i;
+    }
+  });
+  if (Math.hypot(position.x, position.z) < 60)
+    return "WICKMERE / HOME DISTRICT";
+  return distance < 65
+    ? DISTRICTS[nearest].name.toUpperCase()
+    : "COUNTY RING ROAD";
+}
+requestAnimationFrame(frame);
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+$("begin").onclick = () => {
+  playing = true;
+  $("title").hidden = true;
+  $("hud").hidden = false;
+  if (state.starter) {
+    doorOpen = true;
+    frontOpen = true;
+    syncCompanion();
+  } else position.set(0, 1.35, 1.8);
+  updateHUD();
+  requestLook();
+};
 async function load() {
-  const names = [
-    'cat',
-    'dog',
-    'hamster',
-    'pigeon',
-    'raccoon',
-    'rabbit',
-    'fox',
-    'tortoise',
-    'duck',
-    'sheep',
-    'goat',
-    'player',
-    'professor',
-    'house',
-    'garage',
-    'tree',
-    'fence',
-    'bench',
-    'flowers',
-  ];
   const loader = new GLTFLoader();
+  const [catalog, layout, lighting] = await Promise.all(
+    ["asset-catalog.json", "bedroom-layout.json", "world-lighting.json"].map(
+      async (file) => {
+        const response = await fetch(base + file);
+        if (!response.ok) throw new Error(file + " missing");
+        return response.json();
+      },
+    ),
+  );
+  const names = Object.keys(catalog);
+  const sky = await new HDRLoader().loadAsync(base + lighting.environment);
+  sky.mapping = THREE.EquirectangularReflectionMapping;
+  scene.environment = sky;
+  scene.environmentIntensity = 0.7;
+  scene.background = sky;
+  scene.backgroundIntensity = 0.8;
   let loaded = 0;
   await Promise.all(
     names.map(async (name) => {
       assets[name] = await loader.loadAsync(`${base}models/${name}.glb`);
       loaded++;
-      $('begin').innerHTML =
-        `Growing the neighborhood… ${Math.round((loaded / names.length) * 100)}%`;
+      $("progress").textContent =
+        Math.round((loaded / names.length) * 100) + "%";
     }),
   );
-  buildWorld(0);
-  resize();
-  $('begin').disabled = false;
-  $('begin').innerHTML =
-    `${state.starter ? 'Continue your adventure' : 'Begin your adventure'} <span>↗</span>`;
+  for (const a of Object.values(assets)) setupMesh(a.scene);
+  modularWorld = assembleWorld(scene, assets, catalog, layout);
+  worldInfo = modularWorld.info;
+  region = modularWorld.root;
+  actors.push(...modularWorld.animated);
+  door = asset("door", -0.7, 4);
+  frontDoor = asset("door", -0.7, 8);
+  torch = asset("torch");
+  torch.visible = false;
+  carrier = asset("carrier");
+  carrier.visible = false;
+  buildInteractions();
+  buildRain();
+  if (state.starter) syncCompanion();
+  $("begin").disabled = false;
+  $("begin").innerHTML = state.starter
+    ? "CONTINUE YOUR JOURNEY <span>→</span>"
+    : "WAKE UP <span>→</span>";
 }
-load().catch((error) => {
-  console.error(error);
-  showError(
-    'The moving truck lost an asset. Please reload to try again. If this persists, check your connection.',
-  );
-  $('begin').textContent = 'Reload the neighborhood';
-  $('begin').disabled = false;
-  $('begin').onclick = () => location.reload();
-});
-
-// Development-only read access for browser smoke tests; absent from production builds.
+load().catch(showError);
 if (import.meta.env.DEV)
-  window.__animalDebug = {
-    position: () => (player ? { x: player.position.x, z: player.position.z } : null),
-    project: (x, z) => {
-      const p = new THREE.Vector3(x, 0.12, z).project(camera),
-        r = renderer.domElement.getBoundingClientRect();
-      return { x: r.left + ((p.x + 1) * r.width) / 2, y: r.top + ((1 - p.y) * r.height) / 2 };
-    },
+  window.__debug = {
+    position: () => ({
+      x: position.x,
+      y: position.y,
+      z: position.z,
+      yaw,
+      pitch,
+    }),
     stats: () => ({
       calls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
-      animations: mixers.length,
+      actors: actors.length,
+      placements: modularWorld?.placementLog.length,
     }),
+    assets: () =>
+      Object.fromEntries(
+        Object.entries(assets).map(([k, v]) => [
+          k,
+          v.animations.map((c) => c.name),
+        ]),
+      ),
+    target: () => activeTarget?.id,
   };

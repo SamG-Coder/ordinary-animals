@@ -1,9 +1,9 @@
 node_modules/
 dist/
+artifacts/
 *.blend1
 *.blend2
-test-results/
-playwright-report/
-.DS_Store
-artifacts/
-artifacts-*.log
+public/textures/
+game-assets/textures/
+game-assets/models/bedroom.glb
+assets/textures/

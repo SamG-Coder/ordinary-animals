@@ -2,202 +2,250 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f0e5" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#111719" />
     <meta
       name="description"
-      content="An absurd, cozy 3D animal adventure. You're ten. Your professor is a guy in a garage. Your starter is somebody's hamster."
+      content="You are ten. The animals are real. The adults signed the waiver. A dark first-person animal-battling adventure."
     />
-    <title>Ordinary Animals — Extraordinary Liability</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%232f493a'/%3E%3Ctext y='.9em' x='12' font-size='76'%3E✿%3C/text%3E%3C/svg%3E"
-    />
+    <link rel="icon" href="data:," />
+    <title>Ordinary Animals — No Supervision</title>
   </head>
   <body>
-    <div id="world" aria-label="3D neighborhood"></div>
-    <div class="grain"></div>
-    <header>
-      <a class="brand" href="./" aria-label="Ordinary Animals home"
-        ><span class="brandmark">✳</span
-        ><span>ORDINARY<br />ANIMALS<span class="brand-dot">®? </span></span></a
-      >
-      <nav>
-        <span class="edition">A VERY UNOFFICIAL ADVENTURE</span
-        ><button id="guide-btn" class="nav-btn">Field guide <span>↗</span></button
-        ><button id="sound-btn" class="sound-btn" aria-label="Enable sound" title="Enable sound">
-          ♪<span class="sound-slash">/</span>
-        </button>
-      </nav>
-    </header>
-    <main id="intro">
-      <div class="eyebrow">
-        <span class="tiny-star">✦</span> LITTLE DITCH. POPULATION: MOSTLY FINE.
+    <div id="viewport"></div>
+    <div id="vignette"></div>
+    <section id="title">
+      <div class="wordmark">
+        ORDINARY ANIMALS <span>EST. UNDER QUESTIONABLE SUPERVISION</span>
       </div>
-      <h1>Ordinary<br /><em>animals.</em><span class="title-flower">✳</span></h1>
-      <div class="subtitle">Extraordinary liability.</div>
-      <p class="intro-copy">
-        You’re ten. He’s apparently a professor.<br />That’s apparently enough to save the
-        neighborhood.
-      </p>
-      <button id="begin" class="primary" disabled>Growing the neighborhood… <span>↗</span></button>
-      <div class="intro-note"><span class="dot"></span> THREE STARTERS. ZERO QUALIFICATIONS.</div>
-      <div class="prof-note">
-        <span class="note-pin"></span>“Your parents said it’s probably fine.”<small
-          >— GARY, MAN WITH A LAB COAT</small
-        >
+      <div class="title-copy">
+        <div class="eyebrow">WICKMERE COUNTY / 05:17 AM</div>
+        <h1>GROW UP.<br /><em>THEY SAID.</em></h1>
+        <p>
+          You’re ten years old.<br />There’s a letter on your desk.<br />Apparently,
+          that makes this legal.
+        </p>
+        <button id="begin" disabled>
+          PREPARING YOUR ROOM <span id="progress">0%</span></button
+        ><small>A FIRST-PERSON ANIMAL-BATTLING PARODY</small>
       </div>
-    </main>
-    <div id="world-caption">
-      <span class="coordinate">35° 00′ N &nbsp; SOMEWHERE IN THE SUBURBS</span>
-      <h2>A very big world.<br /><em>A very small allowance.</em></h2>
-      <span class="scene-caption"
-        >A tiny town, made in Blender. A questionable adventure, made for you.</span
-      >
-    </div>
-    <div id="loading-error" hidden></div>
+      <div class="title-right">
+        NO MAGIC.<br />NO SUPERVISION.<br />JUST ANIMALS.
+      </div>
+      <div class="title-footer">
+        <span>BLENDER-AUTHORED WORLD & ANIMATION</span
+        ><span>HEADPHONES RECOMMENDED · DESKTOP RECOMMENDED</span>
+      </div>
+    </section>
     <div id="hud" hidden>
-      <section class="quest">
-        <span class="eyebrow">THE NEIGHBORHOOD LEAGUE</span>
-        <h3 id="quest-title">Speak to Professor Gary</h3>
-        <p id="quest-copy">The lab is the garage. Obviously.</p>
-        <div id="stamps">
-          <span>01</span><span>02</span><span>03</span><small>LOCAL LEGEND LICENSE</small>
-        </div>
-      </section>
-      <div class="location-label">
-        <span class="dot"></span> LITTLE DITCH <small>GOLDEN HOUR, INDEFINITELY</small>
+      <div class="topline">
+        <span id="location">YOUR BEDROOM</span><span id="clock">05:17</span
+        ><button id="menu-btn">JOURNAL <kbd>J</kbd></button>
       </div>
-      <div id="companion-card">
-        <img id="companion-img" alt="" />
-        <div>
-          <small>YOUR EMOTIONAL SUPPORT ANIMAL</small><b id="companion-name"></b
-          ><span id="companion-description"></span>
-        </div>
+      <div id="objective">
+        <span>CURRENT OBJECTIVE</span>
+        <p id="objective-text">Read the letter on your desk.</p>
       </div>
-      <div class="controls">
-        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span
-        ><span><kbd>E</kbd> interact</span><span>click ground to walk</span>
+      <div id="crosshair"></div>
+      <div id="interact" hidden>
+        <span id="interact-label"></span
+        ><button id="interact-btn"><kbd>E</kbd> INTERACT</button>
       </div>
-      <button id="interact" class="primary" hidden></button>
-      <button id="home-btn" class="map-home" title="Return to Gary">
-        ⌂ <span>Back to Gary</span>
-      </button>
-      <div id="touch-controls">
-        <button data-move="up" aria-label="Walk forward">↑</button>
-        <div>
-          <button data-move="left" aria-label="Walk left">←</button
-          ><button data-move="down" aria-label="Walk backward">↓</button
-          ><button data-move="right" aria-label="Walk right">→</button>
+      <div id="party-hud"></div>
+      <div id="waypoint"></div>
+      <div class="bottomline">
+        <span
+          ><kbd>WASD</kbd> WALK &nbsp; <kbd>SHIFT</kbd> RUN &nbsp;
+          <kbd>F</kbd> TORCH</span
+        ><span id="look-hint">CLICK TO LOOK · ESC RELEASES MOUSE</span>
+      </div>
+      <div id="stamina"><i></i></div>
+      <button id="audio-btn" title="Toggle ambient audio">SOUND OFF</button>
+      <div id="touch">
+        <div id="pad">
+          <button data-key="w">↑</button>
+          <div>
+            <button data-key="a">←</button><button data-key="s">↓</button
+            ><button data-key="d">→</button>
+          </div>
         </div>
+        <span>DRAG RIGHT SIDE TO LOOK</span>
       </div>
     </div>
     <div id="toast" role="status"></div>
-    <div id="dialogue" class="modal-backdrop" hidden>
-      <section class="dialogue-panel">
-        <div class="dialogue-portrait">G<span>“PhD”</span></div>
-        <div class="dialogue-body">
-          <span class="eyebrow" id="speaker">PROFESSOR GARY · CREDENTIALS PENDING</span>
-          <p id="dialogue-text"></p>
-          <button id="dialogue-next" class="text-button">Go on… <span>→</span></button>
-        </div>
-      </section>
-    </div>
-    <div id="starter" class="modal-backdrop" hidden>
-      <section class="starter-panel">
-        <span class="eyebrow">A LIFE-CHANGING DECISION. ALLEGEDLY.</span>
-        <h2>Choose your <em>perfectly normal</em> companion.</h2>
-        <p>No fire. No lightning. One of them does know “sit.”</p>
-        <div id="starter-cards"></div>
-        <small>Every starter can complete the adventure. Pick your kind of trouble.</small>
-      </section>
-    </div>
-    <div id="encounter" class="modal-backdrop" hidden>
-      <section class="encounter-panel">
-        <div class="encounter-heading">
-          <span class="eyebrow">A WILD SOCIAL SITUATION!</span
-          ><button id="leave-encounter" class="close-btn" aria-label="Leave encounter">×</button>
-        </div>
-        <div class="encounter-pets">
-          <img id="battle-companion" alt="Your companion" /><span>✦</span
-          ><img id="battle-wild" alt="Neighborhood animal" />
-        </div>
-        <div class="encounter-title">
-          <h2 id="encounter-name"></h2>
-          <span id="encounter-mood"></span>
-        </div>
-        <p id="encounter-story"></p>
-        <div class="meter-label"><span>TRUST</span><b id="trust-value">0 / 100</b></div>
-        <div class="meter"><i id="trust-meter"></i></div>
-        <div class="meter-label confidence">
-          <span>YOUR CONFIDENCE</span><b id="confidence-value">100 / 100</b>
-        </div>
-        <div class="meter confidence"><i id="confidence-meter"></i></div>
-        <p id="battle-log" role="status"></p>
-        <div id="moves">
-          <button data-move="reassure">
-            <span>♡</span> Reassure<small>For a nervous animal</small></button
-          ><button data-move="snack">
-            <span>◒</span> Offer a snack<small>For a hungry animal</small></button
-          ><button data-move="play">
-            <span>✳</span> Play it cool<small>For a restless animal</small>
+    <div id="fade"></div>
+    <section id="dialogue" class="overlay" hidden>
+      <div class="dialogue-box">
+        <div class="eyebrow" id="speaker">A LETTER FROM HOME</div>
+        <p id="dialogue-text"></p>
+        <button id="next">CONTINUE <span>→</span></button>
+      </div>
+    </section>
+    <section id="choose" class="overlay" hidden>
+      <div class="choice-box">
+        <div class="eyebrow">COUNTY ANIMAL RESEARCH / INTAKE 001</div>
+        <h2>Choose your responsibility.</h2>
+        <p>
+          “They’re all perfectly ordinary animals. Try not to make this weird.”
+        </p>
+        <div class="choices">
+          <button data-starter="cat">
+            <span>01 / FELINE</span>
+            <h3>Cat</h3>
+            <p>Fast. Precise. Already disappointed in you.</p>
+            <small>SCRATCH · BITE · HISS · POUNCE</small></button
+          ><button data-starter="dog">
+            <span>02 / CANINE</span>
+            <h3>Dog</h3>
+            <p>Strong. Loyal. Has not read the waiver.</p>
+            <small>BITE · BODY CHECK · GROWL · HOWL</small></button
+          ><button data-starter="hamster">
+            <span>03 / RODENT</span>
+            <h3>Hamster</h3>
+            <p>Small. Resourceful. A deeply unreasonable choice.</p>
+            <small>NIBBLE · WHEEL RUSH · POCKET SAND</small>
           </button>
         </div>
-        <button id="encounter-done" class="primary" hidden>
-          Back to the neighborhood <span>→</span>
-        </button>
-      </section>
-    </div>
-    <div id="guide" class="modal-backdrop" hidden>
-      <section class="guide-panel">
-        <button id="close-guide" class="close-btn" aria-label="Close field guide">×</button
-        ><span class="eyebrow">DEPARTMENT OF UNNECESSARY ADVENTURES</span>
-        <h2>Your field <em>guide.</em></h2>
-        <p>
-          You are ten years old. Gary owns a lab coat. Together, these facts have somehow produced
-          an expedition.
-        </p>
-        <div class="guide-grid">
-          <div>
-            <b>01 / ADOPT A COLLEAGUE</b>
-            <p>Talk to Gary and choose a cat, dog, or hamster. All three are equally qualified.</p>
-          </div>
-          <div>
-            <b>02 / READ THE ROOM</b>
-            <p>
-              Walk to the glowing markers. Match your approach to the animal’s mood to build trust
-              before you lose confidence.
-            </p>
-          </div>
-          <div>
-            <b>03 / GO SLIGHTLY FARTHER</b>
-            <p>
-              Earn three stamps in each region and report to Gary. Complete the town, woods, and
-              coast, then face his champion hamster.
-            </p>
-          </div>
+      </div>
+    </section>
+    <section id="battle" hidden>
+      <div class="battle-top">
+        <span id="battle-kind">WILD ENCOUNTER</span
+        ><span id="battle-round">TURN 1</span>
+      </div>
+      <div class="health enemy">
+        <div>
+          <strong id="enemy-name"></strong><span id="enemy-level"></span>
         </div>
-        <p class="guide-controls">
-          <kbd>WASD</kbd> / <kbd>↑↓←→</kbd> Move &nbsp; <kbd>E</kbd> Interact &nbsp;
-          <kbd>Esc</kbd> Close<br />Or click the ground to walk. Your progress saves on this device.
+        <div class="health-track"><i id="enemy-hp"></i></div>
+        <small id="enemy-status"></small>
+      </div>
+      <div class="health ally">
+        <div><strong id="ally-name"></strong><span id="ally-level"></span></div>
+        <div class="health-track"><i id="ally-hp"></i></div>
+        <small id="ally-status"></small>
+      </div>
+      <div class="battle-console">
+        <div id="battle-log" role="status"></div>
+        <div id="move-buttons"></div>
+        <div id="battle-actions">
+          <button id="capture-btn">
+            THROW CARRIER <span id="carrier-count"></span></button
+          ><button id="heal-btn">MEDKIT <span id="medkit-count"></span></button
+          ><button id="switch-btn">SWITCH ANIMAL</button
+          ><button id="run-btn">RUN</button>
+        </div>
+        <button id="battle-continue" hidden>CONTINUE →</button>
+      </div>
+    </section>
+    <section id="journal" class="overlay" hidden>
+      <div class="journal-box">
+        <button class="close" id="close-journal">×</button>
+        <div class="eyebrow">PROPERTY OF A TEN-YEAR-OLD</div>
+        <h2>Field journal.</h2>
+        <div class="journal-tabs">
+          <button data-tab="map">REGION MAP</button
+          ><button data-tab="party">YOUR ANIMALS</button
+          ><button data-tab="guide">FIELD MANUAL</button>
+        </div>
+        <div id="tab-map">
+          <canvas
+            id="map"
+            width="900"
+            height="600"
+            aria-label="County map with eight districts"
+          ></canvas>
+          <p id="map-caption"></p>
+          <div id="badge-list"></div>
+        </div>
+        <div id="tab-party" hidden></div>
+        <div id="tab-guide" hidden>
+          <p>
+            WASD moves. Mouse looks. Click the world to capture the mouse;
+            Escape releases it. If your browser blocks mouse capture, drag to
+            look or use the arrow keys. Shift sprints. F toggles your torch. E
+            interacts. J opens this journal.
+          </p>
+          <p>
+            Battle animals using their moves. Canines have an advantage over
+            felines, felines over rodents, rodents over canines. Speed decides
+            who acts first. Weaken wild animals before throwing a carrier.
+            Trainer animals cannot be captured.
+          </p>
+          <p>
+            Use medkits or switch to another animal when needed. Captured
+            animals join your party (maximum six). Return home or visit Gary to
+            restore your party for free. If your entire party faints, you wake
+            up at home.
+          </p>
+          <p>
+            Defeat the eight district leaders in order. Each badge permits
+            travel between previously visited league offices using the map. Then
+            return to Gary for the four-round county championship.
+          </p>
+          <div class="settings">
+            <label
+              >Graphics
+              <select id="graphics">
+                <option value="high">High — full lighting</option>
+                <option value="balanced">Balanced — lower resolution</option>
+                <option value="performance">
+                  Performance — simpler lighting
+                </option>
+              </select></label
+            ><label
+              >Brightness
+              <input
+                id="brightness"
+                type="range"
+                min="0.8"
+                max="2"
+                step="0.05"
+                value="1.35" /></label
+            ><label
+              >Look sensitivity
+              <input
+                id="sensitivity"
+                type="range"
+                min="0.001"
+                max="0.006"
+                step="0.0005"
+                value="0.0025" /></label
+            ><label
+              ><input id="motion" type="checkbox" checked /> Camera
+              movement</label
+            >
+          </div>
+          <button id="reset">RESET THIS SAVE</button>
+          <div id="reset-confirm" hidden>
+            This permanently clears this browser’s campaign.
+            <button id="reset-yes">CONFIRM RESET</button>
+          </div>
+          <p class="credit">
+            Original game, Blender assets and animation · SamGCoder · MIT<br />An
+            independent parody. Not affiliated with Pokémon or its creators.
+          </p>
+        </div>
+      </div>
+    </section>
+    <section id="ending" class="overlay" hidden>
+      <div class="ending-box">
+        <div class="eyebrow">COUNTY ANIMAL LEAGUE / FINAL ASSESSMENT</div>
+        <h2>You are still<br /><em>ten years old.</em></h2>
+        <p>
+          Eight gym leaders. Four league rounds. A room full of adults who could
+          have said no.
         </p>
-        <button id="reset-btn" class="text-button">Start a fresh adventure ↗</button>
-        <p id="reset-message" hidden>
-          Reset this device’s progress?
-          <button id="confirm-reset" class="text-button">Yes, start again</button>
-        </p>
-        <small
-          >Original game & assets · MIT · SamGCoder<br />Not affiliated with Pokémon, Nintendo, or
-          any actual educational institution.</small
+        <p>They call you a Master now.</p>
+        <p>Your mother calls you home.</p>
+        <button id="ending-close">GO HOME →</button
+        ><small
+          >ORDINARY ANIMALS<br />Created by SamGCoder · All world assets
+          authored in Blender<br />MIT licensed</small
         >
-      </section>
-    </div>
-    <footer id="intro-footer">
-      <span>AN ORDINARY ANIMALS ORIGINAL</span
-      ><span
-        >WALK AROUND. MAKE FRIENDS. QUESTION THE ADULTS. <span class="footer-star">✳</span></span
-      >
-    </footer>
+      </div>
+    </section>
+    <div id="error" hidden></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

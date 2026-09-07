@@ -1,0 +1,533 @@
+{
+  "assetCount": 66,
+  "assets": [
+    {
+      "asset": "bed",
+      "source": "assets/bed.blend",
+      "model": "models/bed.glb",
+      "editableObjects": 7,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "bedside-table",
+      "source": "assets/bedside-table.blend",
+      "model": "models/bedside-table.glb",
+      "editableObjects": 7,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "bedside-lamp",
+      "source": "assets/bedside-lamp.blend",
+      "model": "models/bedside-lamp.glb",
+      "editableObjects": 4,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "desk",
+      "source": "assets/desk.blend",
+      "model": "models/desk.glb",
+      "editableObjects": 10,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "desk-lamp",
+      "source": "assets/desk-lamp.blend",
+      "model": "models/desk-lamp.glb",
+      "editableObjects": 3,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "letter",
+      "source": "assets/letter.blend",
+      "model": "models/letter.glb",
+      "editableObjects": 3,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "radio",
+      "source": "assets/radio.blend",
+      "model": "models/radio.glb",
+      "editableObjects": 22,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "books",
+      "source": "assets/books.blend",
+      "model": "models/books.glb",
+      "editableObjects": 7,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "chair",
+      "source": "assets/chair.blend",
+      "model": "models/chair.glb",
+      "editableObjects": 8,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "wardrobe",
+      "source": "assets/wardrobe.blend",
+      "model": "models/wardrobe.glb",
+      "editableObjects": 3,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "rug",
+      "source": "assets/rug.blend",
+      "model": "models/rug.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "storage-boxes",
+      "source": "assets/storage-boxes.blend",
+      "model": "models/storage-boxes.glb",
+      "editableObjects": 6,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "calendar",
+      "source": "assets/calendar.blend",
+      "model": "models/calendar.glb",
+      "editableObjects": 35,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "shoes",
+      "source": "assets/shoes.blend",
+      "model": "models/shoes.glb",
+      "editableObjects": 2,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "curtains",
+      "source": "assets/curtains.blend",
+      "model": "models/curtains.glb",
+      "editableObjects": 2,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "window-interior",
+      "source": "assets/window-interior.blend",
+      "model": "models/window-interior.glb",
+      "editableObjects": 10,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "door",
+      "source": "assets/door.blend",
+      "model": "models/door.glb",
+      "editableObjects": 4,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "torch",
+      "source": "assets/torch.blend",
+      "model": "models/torch.glb",
+      "editableObjects": 3,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "carrier",
+      "source": "assets/carrier.blend",
+      "model": "models/carrier.glb",
+      "editableObjects": 11,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "cat",
+      "source": "assets/cat.blend",
+      "model": "models/cat.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "dog",
+      "source": "assets/dog.blend",
+      "model": "models/dog.glb",
+      "editableObjects": 7,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "hamster",
+      "source": "assets/hamster.blend",
+      "model": "models/hamster.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "rat",
+      "source": "assets/rat.blend",
+      "model": "models/rat.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "fox",
+      "source": "assets/fox.blend",
+      "model": "models/fox.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "rabbit",
+      "source": "assets/rabbit.blend",
+      "model": "models/rabbit.glb",
+      "editableObjects": 15,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "raccoon",
+      "source": "assets/raccoon.blend",
+      "model": "models/raccoon.glb",
+      "editableObjects": 23,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "goat",
+      "source": "assets/goat.blend",
+      "model": "models/goat.glb",
+      "editableObjects": 10,
+      "packedImages": 2,
+      "armatures": 1
+    },
+    {
+      "asset": "gary",
+      "source": "assets/gary.blend",
+      "model": "models/gary.glb",
+      "editableObjects": 45,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "wall-4m",
+      "source": "assets/wall-4m.blend",
+      "model": "models/wall-4m.glb",
+      "editableObjects": 3,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "wall-door-4m",
+      "source": "assets/wall-door-4m.blend",
+      "model": "models/wall-door-4m.glb",
+      "editableObjects": 6,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "wall-window-4m",
+      "source": "assets/wall-window-4m.blend",
+      "model": "models/wall-window-4m.glb",
+      "editableObjects": 4,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "floor-4m",
+      "source": "assets/floor-4m.blend",
+      "model": "models/floor-4m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "ceiling-4m",
+      "source": "assets/ceiling-4m.blend",
+      "model": "models/ceiling-4m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "exterior-wall-4m",
+      "source": "assets/exterior-wall-4m.blend",
+      "model": "models/exterior-wall-4m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "roof-4m",
+      "source": "assets/roof-4m.blend",
+      "model": "models/roof-4m.glb",
+      "editableObjects": 18,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "window-exterior",
+      "source": "assets/window-exterior.blend",
+      "model": "models/window-exterior.glb",
+      "editableObjects": 8,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "porch-step",
+      "source": "assets/porch-step.blend",
+      "model": "models/porch-step.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "terrace-house",
+      "source": "assets/terrace-house.blend",
+      "model": "models/terrace-house.glb",
+      "editableObjects": 25,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "clinic-building",
+      "source": "assets/clinic-building.blend",
+      "model": "models/clinic-building.glb",
+      "editableObjects": 19,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "league-building",
+      "source": "assets/league-building.blend",
+      "model": "models/league-building.glb",
+      "editableObjects": 19,
+      "packedImages": 6,
+      "armatures": 0
+    },
+    {
+      "asset": "road-straight-12m",
+      "source": "assets/road-straight-12m.blend",
+      "model": "models/road-straight-12m.glb",
+      "editableObjects": 6,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "road-junction-12m",
+      "source": "assets/road-junction-12m.blend",
+      "model": "models/road-junction-12m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "path-2m",
+      "source": "assets/path-2m.blend",
+      "model": "models/path-2m.glb",
+      "editableObjects": 4,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "pavement-4m",
+      "source": "assets/pavement-4m.blend",
+      "model": "models/pavement-4m.glb",
+      "editableObjects": 6,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "ground-tile-40m",
+      "source": "assets/ground-tile-40m.blend",
+      "model": "models/ground-tile-40m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "ground-mound-40m",
+      "source": "assets/ground-mound-40m.blend",
+      "model": "models/ground-mound-40m.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "pine-1",
+      "source": "assets/pine-1.blend",
+      "model": "models/pine-1.glb",
+      "editableObjects": 361,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "pine-2",
+      "source": "assets/pine-2.blend",
+      "model": "models/pine-2.glb",
+      "editableObjects": 361,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "pine-3",
+      "source": "assets/pine-3.blend",
+      "model": "models/pine-3.glb",
+      "editableObjects": 361,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "birch",
+      "source": "assets/birch.blend",
+      "model": "models/birch.glb",
+      "editableObjects": 61,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "grass-clump",
+      "source": "assets/grass-clump.blend",
+      "model": "models/grass-clump.glb",
+      "editableObjects": 23,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "rock",
+      "source": "assets/rock.blend",
+      "model": "models/rock.glb",
+      "editableObjects": 1,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "fence-3m",
+      "source": "assets/fence-3m.blend",
+      "model": "models/fence-3m.glb",
+      "editableObjects": 21,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "streetlamp",
+      "source": "assets/streetlamp.blend",
+      "model": "models/streetlamp.glb",
+      "editableObjects": 4,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "utility-pole",
+      "source": "assets/utility-pole.blend",
+      "model": "models/utility-pole.glb",
+      "editableObjects": 2,
+      "packedImages": 4,
+      "armatures": 0
+    },
+    {
+      "asset": "wire-span-16m",
+      "source": "assets/wire-span-16m.blend",
+      "model": "models/wire-span-16m.glb",
+      "editableObjects": 2,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "rain",
+      "source": "assets/rain.blend",
+      "model": "models/rain.glb",
+      "editableObjects": 1,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "wheelie-bin",
+      "source": "assets/wheelie-bin.blend",
+      "model": "models/wheelie-bin.glb",
+      "editableObjects": 9,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "storm-drain",
+      "source": "assets/storm-drain.blend",
+      "model": "models/storm-drain.glb",
+      "editableObjects": 14,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "puddle",
+      "source": "assets/puddle.blend",
+      "model": "models/puddle.glb",
+      "editableObjects": 1,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "fallen-leaves",
+      "source": "assets/fallen-leaves.blend",
+      "model": "models/fallen-leaves.glb",
+      "editableObjects": 36,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "county-sign",
+      "source": "assets/county-sign.blend",
+      "model": "models/county-sign.glb",
+      "editableObjects": 10,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "notice-board",
+      "source": "assets/notice-board.blend",
+      "model": "models/notice-board.glb",
+      "editableObjects": 26,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "school-backpack",
+      "source": "assets/school-backpack.blend",
+      "model": "models/school-backpack.glb",
+      "editableObjects": 7,
+      "packedImages": 2,
+      "armatures": 0
+    },
+    {
+      "asset": "school-shoes",
+      "source": "assets/school-shoes.blend",
+      "model": "models/school-shoes.glb",
+      "editableObjects": 10,
+      "packedImages": 0,
+      "armatures": 0
+    },
+    {
+      "asset": "rival",
+      "source": "assets/rival.blend",
+      "model": "models/rival.glb",
+      "editableObjects": 35,
+      "packedImages": 2,
+      "armatures": 0
+    }
+  ]
+}

@@ -1,12 +1,8 @@
 # Third-party notices
 
-The project’s original code, Blender models, animations, and portrait renders are MIT licensed by SamGCoder. Dependencies retain their own licenses.
+The current game uses Three.js for rendering, model loading, animation playback, postprocessing, and browser-side asset batching. Its MIT license is reproduced below.
 
-- Three.js: MIT. The distributed runtime copyright notice is reproduced below.
-- Vite and its build dependencies: distributed through npm; licenses are included in their installed packages.
-- Playwright: Apache-2.0. Used only for development browser validation.
-- DM Sans and Fraunces: served by Google Fonts under the SIL Open Font License. Fonts are not bundled in this repository. The game uses local fallback fonts if the service is unavailable.
-- Blender is a separate authoring tool, not a distributed runtime dependency.
+Vite, Playwright, and Prettier are development dependencies; their notices are supplied with the installed packages and their upstream distributions. Interface text uses the device's system fonts. No third-party meshes, stock animal models, downloaded material textures, or commercial game assets are used by the active build.
 
 ## Three.js
 
